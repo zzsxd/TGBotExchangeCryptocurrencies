@@ -30,3 +30,7 @@ class ConfigParser:
 
     def get_config(self):
         return self.__current_config
+
+    def set_min_btc(self, min_btc):
+        self.__current_config['min_btc'] = float(min_btc)
+        self.create_conf(self.__current_config)

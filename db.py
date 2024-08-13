@@ -23,27 +23,17 @@ class DB:
                 last_name TEXT,
                 nick_name TEXT,
                 is_admin BOOL,
+                system_data TEXT,
                 UNIQUE(user_id)
                 )
             ''')
             self.__cursor.execute('''
-                                    CREATE TABLE buy(
-                                    row_id INTEGER primary key autoincrement not null,
-                                    name TEXT
-                                    )
-                                    ''')
-            self.__cursor.execute('''
-                                    CREATE TABLE sell(
-                                    row_id INTEGER primary key autoincrement not null,
-                                    name TEXT
-                                    )
-                                    ''')
-            self.__cursor.execute('''
-                                    CREATE TABLE exchange(
-                                    row_id INTEGER primary key autoincrement not null,
-                                    name TEXT
-                                    )
-                                    ''')
+                CREATE TABLE exchange_rates(
+                row_id INTEGER primary key autoincrement not null,
+                name TEXT,
+                type TEXT
+                )
+                ''')
             self.__db.commit()
         else:
             self.__db = sqlite3.connect(self.__db_path, check_same_thread=False)

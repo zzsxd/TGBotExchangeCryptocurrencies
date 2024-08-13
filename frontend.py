@@ -7,15 +7,30 @@ class Bot_inline_btns:
         self.__markup = types.InlineKeyboardMarkup(row_width=1)
 
     def admin_btns(self):
-        one = types.InlineKeyboardButton('Создать направление покупки', callback_data='addbuy')
-        two = types.InlineKeyboardButton('Создать направление продажи', callback_data='addsell')
-        three = types.InlineKeyboardButton('Создать направление обмена', callback_data='addexchange')
-        four = types.InlineKeyboardButton('Удалить направление покупки', callback_data='delbuy')
-        five = types.InlineKeyboardButton('Удалить направление продажи', callback_data='delsell')
-        six = types.InlineKeyboardButton('Удалить направление обмена', callback_data='delexchange')
+        one = types.InlineKeyboardButton('Создать курс обмена', callback_data='add_exchange_rate')
+        two = types.InlineKeyboardButton('Удалить курс обмена', callback_data='del_exchange_rate')
+        three = types.InlineKeyboardButton('Изменить курс', callback_data='change_ratio')
         seven = types.InlineKeyboardButton('Экспортировать пользователей', callback_data='export')
-        self.__markup.add(one, two, three, four, five, six, seven)
+        self.__markup.add(one, two, seven)
         return self.__markup
+
+    def select_exchange_direction(self):
+        one = types.InlineKeyboardButton('Направление покупки', callback_data='select_buy')
+        two = types.InlineKeyboardButton('Направление продажи', callback_data='select_sell')
+        seven = types.InlineKeyboardButton('Направление обмена', callback_data='select_exchange')
+        self.__markup.add(one, two, seven)
+        return self.__markup
+
+    def direction_buttons(self, data: tuple, admin: bool = False):
+        markup = types.InlineKeyboardMarkup(row_width=1)
+        for i in data:
+            if not admin:
+                callback_data = f"choose_exchange_rate{i[0]}"
+            else:
+                callback_data = f"del_exchange_rate{i[0]}"
+            one = types.InlineKeyboardButton(i[1], callback_data=callback_data)
+            markup.add(one)
+        return markup
 
     def buy_crypto_btns(self, buy_btns):
         for i in buy_btns:

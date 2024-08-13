@@ -1,15 +1,5 @@
 import pandas as pd
-
-
-class TempUserData:
-    def __init__(self):
-        super(TempUserData, self).__init__()
-        self.__user_data = {}
-
-    def temp_data(self, user_id):
-        if user_id not in self.__user_data.keys():
-            self.__user_data.update({user_id: [None, None, None, None, None, None, None, None]})
-        return self.__user_data
+import json
 
 
 class DbAct:
@@ -27,8 +17,10 @@ class DbAct:
             else:
                 is_admin = False
             self.__db.db_write(
-                'INSERT INTO users (user_id, first_name, last_name, nick_name, is_admin) VALUES (?, ?, ?, ?, ?)',
-                (user_id, first_name, last_name, nick_name, is_admin))
+                'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin) '
+                'VALUES (?, ?, ?, ?, ?, ?)',
+                (user_id, first_name, last_name, nick_name, json.dumps({"index": None, "admin_action": None,
+                                                                        "admin_exchange_direction": None}), is_admin))
 
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
@@ -48,35 +40,41 @@ class DbAct:
                 status = False
             return status
 
+    def set_user_system_key(self, user_id: int, key: str, value: any) -> None:
+        system_data = self.get_user_system_data(user_id)
+        if system_data is None:
+            return None
+        system_data = json.loads(system_data)
+        system_data[key] = value
+        self.__db.db_write('UPDATE users SET system_data = ? WHERE user_id = ?', (json.dumps(system_data), user_id))
+
+    def get_user_system_key(self, user_id: int, key: str):
+        system_data = self.get_user_system_data(user_id)
+        if system_data is None:
+            return None
+        system_data = json.loads(system_data)
+        if key not in system_data.keys():
+            return None
+        return system_data[key]
+
+    def get_user_system_data(self, user_id: int):
+        if not self.user_is_existed(user_id):
+            return None
+        return self.__db.db_read('SELECT system_data FROM users WHERE user_id = ?', (user_id,))[0][0]
+
+    ########################################################################################################
+
     def get_user_id(self):
         return self.__db.db_read('SELECT user_id FROM users', ())
 
-    def add_new_buy(self, name):
-        self.__db.db_write('INSERT INTO buy (name) VALUES (?)', (name, ))
+    def add_exchange_rates(self, name: str, type: str):
+        self.__db.db_write('INSERT INTO exchange_rates (name, type) VALUES (?, ?)', (name, type))
 
-    def get_buy_btns(self):
-        return self.__db.db_read('SELECT row_id, name FROM buy', ())
+    def get_exchange_rates(self, type: str):
+        return self.__db.db_read('SELECT row_id, name FROM exchange_rates WHERE type = ?', (type, ))
 
-    def del_buy_btns(self, row_id):
-        self.__db.db_write('DELETE FROM buy WHERE row_id = ?', (row_id, ))
-
-    def add_new_sell(self, name):
-        self.__db.db_write('INSERT INTO sell (name) VALUES (?)', (name, ))
-
-    def get_sell_btns(self):
-        return self.__db.db_read('SELECT row_id, name FROM sell', ())
-
-    def del_sell_btns(self, row_id):
-        self.__db.db_write('DELETE FROM sell WHERE row_id = ?', (row_id, ))
-
-    def add_new_exchange(self, name):
-        self.__db.db_write('INSERT INTO exchange (name) VALUES (?)', (name, ))
-
-    def get_exchange_btns(self):
-        return self.__db.db_read('SELECT row_id, name FROM exchange', ())
-
-    def del_exchange_btns(self, row_id):
-        self.__db.db_write('DELETE FROM exchange WHERE row_id = ?', (row_id, ))
+    def del_exchange_rates(self, row_id: str):
+        self.__db.db_write('DELETE FROM exchange_rates WHERE row_id = ?', (row_id, ))
 
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}
