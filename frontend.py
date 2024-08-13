@@ -42,3 +42,8 @@ class Bot_inline_btns:
         four = types.InlineKeyboardButton('Назад', callback_data='back')
         self.__markup.add(one, two, three, four)
         return self.__markup
+
+    def buy_btns(self):
+        one = types.InlineKeyboardButton('Я оплатил', callback_data='Ibuy')
+        two = types.InlineKeyboardButton('Назад', callback_data='back')
+        self.__markup.add(one, two)

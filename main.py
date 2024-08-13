@@ -82,7 +82,6 @@ def main():
                 bot.send_message(user_id, 'Выберите категорию для удаления',
                                  reply_markup=buttons.exchange_crypto_btns(exchange_btns))
             elif call.data[:8] == 'exchange' and code == 5:
-                print('123')
                 db_actions.del_exchange_btns(call.data[8:])
                 temp_user_data.temp_data(user_id)[user_id][0] = None
                 bot.send_message(user_id, 'Категория удалена успешно!')
@@ -95,6 +94,16 @@ def main():
                                           f'Заполните заявку для покупки {call.id}\n\n'
                                           f'Цена за 1 {call.data} - bebra',
                                  reply_markup=buttons.buy_request_btns())
+            elif call.data == 'continue':
+                bot.send_message(user_id, 'Проверьте, что все данные указаны\n\n'
+                                          'Вы покупаете 0,001 ВТС за 13454 МИР. руб.\n\n'
+                                            'Средства будут переведены на адрес\n\n'
+                                          'BTC: 7884293kfkkfsfsidfisfllfsisaffs\n\n'
+                                          'Для совершения операции отправьте 13454 р. на номер 4536 6363 6262 6636, карта '
+                                          'МИР Евгений Алексеевич К.\n\n'
+                                          'После оплаты нажмите "Я оплатил."\n\n'
+                                          'Средства поступят втечение 20 минут.',
+                                            reply_markup=buttons.buy_btns())
 
     @bot.message_handler(content_types=['text', 'photo'])
     def text_message(message):
