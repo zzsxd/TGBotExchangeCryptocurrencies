@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/TGBotCryptocurrencies.iml" filepath="$PROJECT_DIR$/.idea/TGBotCryptocurrencies.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/ExchangeBot.iml" filepath="$PROJECT_DIR$/.idea/ExchangeBot.iml" />
     </modules>
   </component>
 </project>
