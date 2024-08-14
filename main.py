@@ -40,11 +40,6 @@ def validate_btc(address):
         return False
 
 
-def get_bitcoin_price_in_rub():
-    price = cryptocompare.get_price('BTC', currency='RUB')
-    return price['BTC']['RUB']
-
-
 def validate_mir(card_number):
     if len(card_number) != 16:
         return False
@@ -75,7 +70,8 @@ def get_current_time():
 
 
 def current_btc_price():
-    return 2_000_000
+    price = cryptocompare.get_price('BTC', currency='RUB')
+    return price['BTC']['RUB']
 
 
 def create_topic():
