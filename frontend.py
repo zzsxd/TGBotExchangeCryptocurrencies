@@ -1,10 +1,10 @@
 from telebot import types
 
+
 class Bot_inline_btns:
     def __init__(self):
         super(Bot_inline_btns, self).__init__()
         self.__markup = types.InlineKeyboardMarkup(row_width=1)
-
 
     def admin_btns(self):
         one = types.InlineKeyboardButton('Создать направление', callback_data='add_exchange_rate')
@@ -34,7 +34,7 @@ class Bot_inline_btns:
 
     def buy_crypto_btns(self, buy_btns):
         for i in buy_btns:
-            btn = types.InlineKeyboardButton(f'{i[1]}', callback_data=f'buy{i[0]}')
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'buy{i[0]}')
             self.__markup.add(btn)
         return self.__markup
 
@@ -52,13 +52,14 @@ class Bot_inline_btns:
 
     def buy_request_btns(self):
         one = types.InlineKeyboardButton('Количество', callback_data='quantity')
-        two = types.InlineKeyboardButton('Адрес', callback_data='address')
+        two = types.InlineKeyboardButton('Адрес кошелька', callback_data='address')
         three = types.InlineKeyboardButton('Продолжить', callback_data='continue')
         four = types.InlineKeyboardButton('Назад', callback_data='back')
         self.__markup.add(one, two, three, four)
         return self.__markup
 
     def buy_btns(self):
-        one = types.InlineKeyboardButton('Я оплатил', callback_data='Ibuy')
+        one = types.InlineKeyboardButton('Я оплатил', callback_data='ibuy')
         two = types.InlineKeyboardButton('Назад', callback_data='back')
         self.__markup.add(one, two)
+        return self.__markup

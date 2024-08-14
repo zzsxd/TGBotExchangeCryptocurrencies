@@ -20,7 +20,9 @@ class DbAct:
                 'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin) '
                 'VALUES (?, ?, ?, ?, ?, ?)',
                 (user_id, first_name, last_name, nick_name, json.dumps({"index": None, "admin_action": None,
-                                                                        "admin_exchange_direction": None}), is_admin))
+                                                                        "admin_exchange_direction": None,
+                                                                        "buy": None,
+                                                                        "address": None,}), is_admin))
 
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
@@ -78,7 +80,6 @@ class DbAct:
         
     def update_topic_id(self, user_id, topic_id):
         self.__db.db_write('UPDATE users SET topic_id = ? WHERE user_id = ?', (topic_id, user_id))
-
 
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}

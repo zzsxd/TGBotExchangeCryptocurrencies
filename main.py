@@ -2,6 +2,7 @@ import telebot
 import os
 import platform
 import cryptocompare
+import random
 import coinaddrvalidator
 from threading import Lock
 from config_parser import ConfigParser
@@ -71,13 +72,12 @@ def create_topic():
                                                   name=f'{message.from_user.first_name} '
                                                        f'{message.from_user.last_name} ПОПОЛНЕНИЕ БАЛАНСА',
                                                   icon_color=0x6FB9F0).message_thread_id
-    bot.forward_message(chat_id=group_id, from_chat_id=message.chat.id, message_id=message.id,
+    bot.forward_message(chat_id=config.get_config()['group_id'], from_chat_id=message.chat.id, message_id=message.id,
                         message_thread_id=topic_id)
     db_actions.update_topic_id(user_id, topic_id)
-    bot.send_message(chat_id=group_id, message_thread_id=topic_id, text='Получена оплата!✅\n'
-                                                                        'Проверьте информацию и '
-                                                                        'подтвердите!',
-                     reply_markup=buttons.manager_btns())
+    bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id, text='Получена оплата!✅\n'
+                                                                                               'Проверьте информацию и '
+                                                                                               'подтвердите!')
     bot.send_message(user_id, 'Ваша заявка принята, ожидайте!')
 
 
@@ -146,26 +146,34 @@ def main():
                     db_actions.set_user_system_key(user_id, "index", 1)
                     bot.send_message(user_id, f"Введите коэффициент курса для "
                                               f"пользователей относительно текущего курса BTC = {current_btc_price()}")
-
-            if call.data == 'export':
-                db_actions.db_export_xlsx()
-                bot.send_document(user_id, open(config.get_config()['xlsx_path'], 'rb'))
-                os.remove(config.get_config()['xlsx_path'])
-            elif call.data[:3] == 'buy':
+                elif call.data == 'export':
+                    db_actions.db_export_xlsx()
+                    bot.send_document(user_id, open(config.get_config()['xlsx_path'], 'rb'))
+                    os.remove(config.get_config()['xlsx_path'])
+            if call.data[:3] == 'buy':
                 bot.send_message(user_id, 'Создание заявки на покупку!\n\n'
                                           f'Заполните заявку для покупки {call.id}\n\n'
                                           f'Цена за 1 {call.data} - bebra',
                                  reply_markup=buttons.buy_request_btns())
-            # elif call.data == 'continue':
-            #     bot.send_message(user_id, 'Проверьте, что все данные указаны\n\n'
-            #                               'Вы покупаете 0,001 ВТС за 13454 МИР. руб.\n\n'
-            #                                 'Средства будут переведены на адрес\n\n'
-            #                               'BTC: 7884293kfkkfsfsidfisfllfsisaffs\n\n'
-            #                               'Для совершения операции отправьте 13454 р. на номер 4536 6363 6262 6636, карта '
-            #                               'МИР Евгений Алексеевич К.\n\n'
-            #                               'После оплаты нажмите "Я оплатил."\n\n'
-            #                               'Средства поступят втечение 20 минут.',
-            #                                 reply_markup=buttons.buy_btns())
+            elif call.data == 'quantity':
+                db_actions.set_user_system_key(user_id, "index", 2)
+                bot.send_message(user_id, 'Введите количество желаемой крипты')
+            elif call.data == 'address':
+                db_actions.set_user_system_key(user_id, "index", 3)
+                bot.send_message(user_id, 'Введите адрес кошелька')
+            elif call.data == 'continue':
+                number_application = random.randint(000000, 999999)
+                bot.send_message(user_id, 'Проверьте, что все данные указаны верно!\n\n'
+                                          f'Номер заявки: {number_application}\n\n'
+                                          f'Вы покупаете 0,001 ВТС за 13454 МИР. руб.'
+                                          f'Средства будут переведены на адрес\n\n'
+                                          f'BTC: <code>7884293kfkkfsfsidfisfllfsisaffs</code>\n\n'
+                                          f'Для совершения операции отправьте 13454 р.\n'
+                                          f'на номер <code>4536 6363 6262 6636</code>, карта МИР Евгений Алексеевич К.'
+                                          f'После оплаты нажмите Я оплатил.\n'
+                            f'Средства поступят в течении 20 минут', parse_mode='HTML', reply_markup=buttons.buy_btns())
+            elif call.data == 'ibuy':
+                pass
 
     @bot.message_handler(content_types=['text', 'photo'])
     def text_message(message):
@@ -189,6 +197,18 @@ def main():
                     else:
                         db_actions.set_user_system_key(user_id, "index", None)
                         bot.send_message(user_id, "Это не число")
+            if code == 2:
+                if verify_user_value(user_input):
+                    db_actions.set_user_system_key(user_id, "buy", user_input)
+                    bot.send_message(user_id, f'Вы получите {user_input} крипты')
+            elif code == 3:
+                if verify_user_text(user_input):
+                    valid = validate_btc(user_input)
+                    if valid:
+                        db_actions.set_user_system_key(user_id, "address", user_input)
+                        bot.send_message(user_id, 'Успешно!')
+                    else:
+                        bot.send_message(user_id, 'Кошелек неверен!')
 
     bot.polling(none_stop=True)
 
