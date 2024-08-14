@@ -32,6 +32,8 @@ class DB:
                 CREATE TABLE exchange_rates(
                 row_id INTEGER primary key autoincrement not null,
                 name TEXT,
+                cost FLOAT,
+                min_cost FLOAT,
                 type TEXT
                 )
                 ''')
@@ -39,8 +41,7 @@ class DB:
                 CREATE TABLE applications(
                 row_id INTEGER primary key autoincrement not null,
                 user_id INTEGER,
-                quantity INTEGER,
-                departure_payment TEXT,
+                quantity FLOAT,
                 destination_address TEXT
                 )
                 ''')

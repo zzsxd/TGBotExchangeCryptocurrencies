@@ -9,7 +9,6 @@ class Bot_inline_btns:
     def admin_btns(self):
         one = types.InlineKeyboardButton('Создать направление', callback_data='add_exchange_rate')
         two = types.InlineKeyboardButton('Удалить направление', callback_data='del_exchange_rate')
-        three = types.InlineKeyboardButton('Изменить направление', callback_data='change_ratio')
         seven = types.InlineKeyboardButton('Экспортировать пользователей', callback_data='export')
         self.__markup.add(one, two, seven)
         return self.__markup
@@ -34,27 +33,27 @@ class Bot_inline_btns:
 
     def buy_crypto_btns(self, buy_btns):
         for i in buy_btns:
-            btn = types.InlineKeyboardButton(i[1], callback_data=f'buy{i[0]}')
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_buy{i[0]}')
             self.__markup.add(btn)
         return self.__markup
 
     def sell_crypto_btns(self, sell_btns):
         for i in sell_btns:
-            btn = types.InlineKeyboardButton(i[1], callback_data=f'sell{i[0]}')
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_sell{i[0]}')
             self.__markup.add(btn)
         return self.__markup
 
     def exchange_crypto_btns(self, exchange_btns):
         for i in exchange_btns:
-            btn = types.InlineKeyboardButton(i[1], callback_data=f'exchange{i[0]}')
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_exchange{i[0]}')
             self.__markup.add(btn)
         return self.__markup
 
     def buy_request_btns(self):
-        one = types.InlineKeyboardButton('Количество', callback_data='quantity')
-        two = types.InlineKeyboardButton('Адрес кошелька', callback_data='address')
-        three = types.InlineKeyboardButton('Продолжить', callback_data='continue')
-        four = types.InlineKeyboardButton('Назад', callback_data='back')
+        one = types.InlineKeyboardButton('Количество', callback_data='buy_quantity')
+        two = types.InlineKeyboardButton('Адрес кошелька', callback_data='buy_address')
+        three = types.InlineKeyboardButton('Продолжить', callback_data='buy_continue')
+        four = types.InlineKeyboardButton('Назад', callback_data='<back>')
         self.__markup.add(one, two, three, four)
         return self.__markup
 

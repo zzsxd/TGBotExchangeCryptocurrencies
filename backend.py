@@ -20,7 +20,13 @@ class DbAct:
                 'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin) '
                 'VALUES (?, ?, ?, ?, ?, ?)',
                 (user_id, first_name, last_name, nick_name, json.dumps({"index": None, "admin_action": None,
-                                                                        "admin_exchange_direction": None,}), is_admin))
+                                                                        "admin_exchange_direction": None,
+                                                                        "user_currency_order": None,
+                                                                        "quantity_user": None,
+                                                                        "user_application_id": None,
+                                                                        "destination_address": None,
+                                                                        "admin_currency_name": None,
+                                                                        "admin_currency_cost": None}), is_admin))
 
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
@@ -64,35 +70,36 @@ class DbAct:
 
     ########################################################################################################
 
-    def get_user_id(self, user_id: int):
-        return self.__db.db_read('SELECT nick_name FROM users WHERE user_id = ?', (user_id,))
-
-    def add_exchange_rates(self, name: str, type: str):
-        self.__db.db_write('INSERT INTO exchange_rates (name, type) VALUES (?, ?)', (name, type))
+    def add_exchange_rates(self, name: str, cost: float, min_cost: float, type: str):
+        self.__db.db_write('INSERT INTO exchange_rates (name, cost, min_cost, type) VALUES (?, ?, ?, ?)', (name, cost, min_cost, type))
 
     def get_exchange_rates(self, type: str):
-        return self.__db.db_read('SELECT row_id, name FROM exchange_rates WHERE type = ?', (type, ))
+        return self.__db.db_read('SELECT row_id, name, cost, min_cost FROM exchange_rates WHERE type = ?', (type, ))
+
+    def get_exchange_rate(self, row_id: int) -> tuple:
+        return self.__db.db_read('SELECT name, cost, min_cost FROM exchange_rates WHERE row_id = ?', (row_id,))[0]
 
     def del_exchange_rates(self, row_id: str):
         self.__db.db_write('DELETE FROM exchange_rates WHERE row_id = ?', (row_id, ))
+
+    ########################################################################################################
         
     def update_topic_id(self, user_id, topic_id):
         self.__db.db_write('UPDATE users SET topic_id = ? WHERE user_id = ?', (topic_id, user_id))
     
     def get_name_user(self, user_id: int):
-        return self.__db.db_read('SELECT first_name, last_name FROM users WHERE user_id = ?', (user_id, ))
+        return self.__db.db_read('SELECT nick_name, first_name, last_name FROM users WHERE user_id = ?', (user_id, ))[0]
     
-    def add_user_id(self, user_id):
-        self.__db.db_write('INSERT INTO applications (user_id) VALUES (?)', (user_id, ))
+    def add_application(self, user_id: int, quantity: float, destination_address: str) -> int:
+        application_id = self.__db.db_write("INSERT INTO applications (user_id, quantity, "
+                                            "destination_address) VALUES (?, ?, ?)",
+                                            (user_id, quantity, destination_address))
+        if application_id is None:
+            return False
+        return application_id
 
-    def add_quantity_user(self, user_id, quantity):
-        self.__db.db_write('UPDATE applications SET quantity = ? WHERE user_id = ?', (quantity, user_id))
-        
-    def add_destination_address(self, user_id, address):
-        self.__db.db_write('UPDATE applications SET destination_address = ? WHERE user_id = ?', (address, user_id))
-        
-    def get_datas_for_admins(self, user_id: int):
-        return self.__db.db_read('SELECT row_id, quantity, destination_address FROM applications WHERE user_id = ?', (user_id,))
+    def get_application(self, row_id: int) -> tuple:
+        return self.__db.db_read('SELECT quantity, destination_address FROM applications WHERE row_id = ?', (row_id, ))[0]
 
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}
