@@ -1,15 +1,15 @@
 from telebot import types
 
-
 class Bot_inline_btns:
     def __init__(self):
         super(Bot_inline_btns, self).__init__()
         self.__markup = types.InlineKeyboardMarkup(row_width=1)
 
+
     def admin_btns(self):
-        one = types.InlineKeyboardButton('Создать курс обмена', callback_data='add_exchange_rate')
-        two = types.InlineKeyboardButton('Удалить курс обмена', callback_data='del_exchange_rate')
-        three = types.InlineKeyboardButton('Изменить курс', callback_data='change_ratio')
+        one = types.InlineKeyboardButton('Создать направление', callback_data='add_exchange_rate')
+        two = types.InlineKeyboardButton('Удалить направление', callback_data='del_exchange_rate')
+        three = types.InlineKeyboardButton('Изменить направление', callback_data='change_ratio')
         seven = types.InlineKeyboardButton('Экспортировать пользователей', callback_data='export')
         self.__markup.add(one, two, seven)
         return self.__markup
@@ -34,7 +34,7 @@ class Bot_inline_btns:
 
     def buy_crypto_btns(self, buy_btns):
         for i in buy_btns:
-            btn = types.InlineKeyboardButton(i[1], callback_data=f'buy{i[0]}')
+            btn = types.InlineKeyboardButton(f'{i[1]}', callback_data=f'buy{i[0]}')
             self.__markup.add(btn)
         return self.__markup
 
