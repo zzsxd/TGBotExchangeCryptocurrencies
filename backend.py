@@ -17,8 +17,8 @@ class DbAct:
             else:
                 is_admin = False
             self.__db.db_write(
-                'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin) '
-                'VALUES (?, ?, ?, ?, ?, ?)',
+                'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin, topic_id) '
+                'VALUES (?, ?, ?, ?, ?, ?, ?)',
                 (user_id, first_name, last_name, nick_name, json.dumps({"index": None, "admin_action": None,
                                                                         "admin_exchange_direction": None}), is_admin))
 
@@ -75,6 +75,10 @@ class DbAct:
 
     def del_exchange_rates(self, row_id: str):
         self.__db.db_write('DELETE FROM exchange_rates WHERE row_id = ?', (row_id, ))
+        
+    def update_topic_id(self, user_id, topic_id):
+        self.__db.db_write('UPDATE users SET topic_id = ? WHERE user_id = ?', (topic_id, user_id))
+
 
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}

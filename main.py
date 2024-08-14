@@ -66,6 +66,20 @@ def validate_mir(card_number):
 def current_btc_price():
     return 2_000_000
 
+def create_topic():
+    topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
+                                                  name=f'{message.from_user.first_name} '
+                                                       f'{message.from_user.last_name} ПОПОЛНЕНИЕ БАЛАНСА',
+                                                  icon_color=0x6FB9F0).message_thread_id
+    bot.forward_message(chat_id=group_id, from_chat_id=message.chat.id, message_id=message.id,
+                        message_thread_id=topic_id)
+    db_actions.update_topic_id(user_id, topic_id)
+    bot.send_message(chat_id=group_id, message_thread_id=topic_id, text='Получена оплата!✅\n'
+                                                                        'Проверьте информацию и '
+                                                                        'подтвердите!',
+                     reply_markup=buttons.manager_btns())
+    bot.send_message(user_id, 'Ваша заявка принята, ожидайте!')
+
 
 def main():
     @bot.message_handler(commands=['start', 'admin', 'buy', 'sell', 'exchange'])

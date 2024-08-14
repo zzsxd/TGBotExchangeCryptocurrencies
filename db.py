@@ -24,6 +24,7 @@ class DB:
                 nick_name TEXT,
                 is_admin BOOL,
                 system_data TEXT,
+                topic_id INTEGER,
                 UNIQUE(user_id)
                 )
             ''')
