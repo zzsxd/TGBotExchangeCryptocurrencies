@@ -17,8 +17,8 @@ class DbAct:
             else:
                 is_admin = False
             self.__db.db_write(
-                'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin, topic_id) '
-                'VALUES (?, ?, ?, ?, ?, ?, ?)',
+                'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin) '
+                'VALUES (?, ?, ?, ?, ?, ?)',
                 (user_id, first_name, last_name, nick_name, json.dumps({"index": None, "admin_action": None,
                                                                         "admin_exchange_direction": None}), is_admin))
 
