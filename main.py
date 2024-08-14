@@ -30,10 +30,13 @@ def verify_user_value(user_input: str) -> bool:
 
 
 def validate_btc(address):
-    y = coinaddrvalidator.validate('btc', address)
-    if y.valid:
-        return True
-    else:
+    try:
+        y = coinaddrvalidator.validate('btc', address)
+        if y.valid:
+            return True
+        else:
+            return False
+    except:
         return False
 
 
@@ -64,8 +67,16 @@ def validate_mir(card_number):
     return luhn_checksum(card_number) == 0
 
 
+from datetime import datetime
+
+
+def get_current_time():
+    return datetime.now().strftime("%d:%m:%Y, %H:%M")
+
+
 def current_btc_price():
     return 2_000_000
+
 
 def create_topic():
     topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
@@ -89,10 +100,14 @@ def main():
         buttons = Bot_inline_btns()
         db_actions.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
                             f'@{message.from_user.username}')
+        db_actions.add_user_id(user_id)
         if command == 'start':
             bot.send_message(user_id,
                              '<b>Привет! 👋</b>\n\n'
-                             '🤖Я бот для <u>Приобритения, продажи и обмена криптовалют</u> ✅',
+                             '🤖Я бот для <u>Приобритения, продажи и обмена криптовалют</u> ✅\n\n'
+                             '/buy - покупка\n\n'
+                             '/sell - продажа\n\n'
+                             '/exchange - обмен',
                              parse_mode='HTML')
         elif command == 'buy':
             buy_buttons = db_actions.get_exchange_rates("buy")
@@ -162,18 +177,41 @@ def main():
                 db_actions.set_user_system_key(user_id, "index", 3)
                 bot.send_message(user_id, 'Введите адрес кошелька')
             elif call.data == 'continue':
-                number_application = random.randint(000000, 999999)
-                bot.send_message(user_id, 'Проверьте, что все данные указаны верно!\n\n'
-                                          f'Номер заявки: {number_application}\n\n'
-                                          f'Вы покупаете 0,001 ВТС за 13454 МИР. руб.'
-                                          f'Средства будут переведены на адрес\n\n'
-                                          f'BTC: <code>7884293kfkkfsfsidfisfllfsisaffs</code>\n\n'
-                                          f'Для совершения операции отправьте 13454 р.\n'
-                                          f'на номер <code>4536 6363 6262 6636</code>, карта МИР Евгений Алексеевич К.'
-                                          f'После оплаты нажмите Я оплатил.\n'
-                            f'Средства поступят в течении 20 минут', parse_mode='HTML', reply_markup=buttons.buy_btns())
+                datas_for_admin = db_actions.get_datas_for_admins(user_id)
+                print(datas_for_admin)
+                if datas_for_admin[0][1] is None:
+                    bot.send_message(user_id, 'Вы не указали количество получаемой крипты!')
+                elif datas_for_admin[0][2] is None:
+                    bot.send_message(user_id, 'Вы не указали адрес кошелька для получения!')
+                else:
+                    bot.send_message(user_id, 'Проверьте, что все данные указаны верно!\n\n'
+                                              f'Номер заявки: {datas_for_admin[0][0]}\n\n'
+                                              f'Вы покупаете {datas_for_admin[0][1]} ВТС за 13454 МИР. руб.\n'
+                                              f'Средства будут переведены на адрес '
+                                              f'BTC: {datas_for_admin[0][2]}\n\n'
+                                              f'Для совершения операции отправьте 13454 р.\n'
+                                              f'на номер <code>4536 6363 6262 6636</code>, карта МИР Евгений Алексеевич К.\n\n'
+                                              f'После оплаты нажмите кнопку: "Я оплатил"\n'
+                                              f'Средства поступят в течении 20 минут', parse_mode='HTML',
+                                     reply_markup=buttons.buy_btns())
             elif call.data == 'ibuy':
-                pass
+                name_user = db_actions.get_name_user(user_id)
+                username_user = db_actions.get_user_id(user_id)
+                datas_for_admin = db_actions.get_datas_for_admins(user_id)
+                time_now = get_current_time()
+                topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
+                                                              name=f'{name_user[0][0]} '
+                                                                   f'{name_user[0][1]} ПОКУПКА',
+                                                              icon_color=0x6FB9F0).message_thread_id
+                db_actions.update_topic_id(user_id, topic_id)
+                bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
+                                 text=f'Номер заявки: {datas_for_admin[0][0]}\n\n'
+                                      f'Время заявки: {time_now}\n'
+                                      f'Пользователь: {username_user[0][0]}\n'
+                                      f'Направление обмена "тут типа в какую крипту переводим"\n'
+                                      f'Количество крипты: {datas_for_admin[0][1]}\n'
+                                      f'Адрес кошелька: <code>{datas_for_admin[0][2]}</code>', parse_mode='HTML')
+                bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
 
     @bot.message_handler(content_types=['text', 'photo'])
     def text_message(message):
@@ -199,16 +237,20 @@ def main():
                         bot.send_message(user_id, "Это не число")
             if code == 2:
                 if verify_user_value(user_input):
-                    db_actions.set_user_system_key(user_id, "buy", user_input)
+                    db_actions.add_quantity_user(user_id, user_input)
                     bot.send_message(user_id, f'Вы получите {user_input} крипты')
+                else:
+                    bot.send_message(user_id, 'Неправильный ввод!')
             elif code == 3:
                 if verify_user_text(user_input):
                     valid = validate_btc(user_input)
                     if valid:
-                        db_actions.set_user_system_key(user_id, "address", user_input)
+                        db_actions.add_destination_address(user_id, user_input)
                         bot.send_message(user_id, 'Успешно!')
                     else:
                         bot.send_message(user_id, 'Кошелек неверен!')
+                else:
+                    bot.send_message(user_id, 'Неправильный ввод!')
 
     bot.polling(none_stop=True)
 

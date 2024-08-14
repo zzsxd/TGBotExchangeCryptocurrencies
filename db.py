@@ -35,6 +35,15 @@ class DB:
                 type TEXT
                 )
                 ''')
+            self.__cursor.execute('''
+                CREATE TABLE applications(
+                row_id INTEGER primary key autoincrement not null,
+                user_id INTEGER,
+                quantity INTEGER,
+                departure_payment TEXT,
+                destination_address TEXT
+                )
+                ''')
             self.__db.commit()
         else:
             self.__db = sqlite3.connect(self.__db_path, check_same_thread=False)
@@ -43,8 +52,10 @@ class DB:
     def db_write(self, queri, args):
         self.set_lock()
         self.__cursor.execute(queri, args)
+        status = self.__cursor.lastrowid
         self.__db.commit()
         self.realise_lock()
+        return status
 
     def db_read(self, queri, args):
         self.set_lock()

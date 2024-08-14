@@ -20,9 +20,7 @@ class DbAct:
                 'INSERT INTO users (user_id, first_name, last_name, nick_name, system_data, is_admin) '
                 'VALUES (?, ?, ?, ?, ?, ?)',
                 (user_id, first_name, last_name, nick_name, json.dumps({"index": None, "admin_action": None,
-                                                                        "admin_exchange_direction": None,
-                                                                        "buy": None,
-                                                                        "address": None,}), is_admin))
+                                                                        "admin_exchange_direction": None,}), is_admin))
 
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
@@ -66,8 +64,8 @@ class DbAct:
 
     ########################################################################################################
 
-    def get_user_id(self):
-        return self.__db.db_read('SELECT user_id FROM users', ())
+    def get_user_id(self, user_id: int):
+        return self.__db.db_read('SELECT nick_name FROM users WHERE user_id = ?', (user_id,))
 
     def add_exchange_rates(self, name: str, type: str):
         self.__db.db_write('INSERT INTO exchange_rates (name, type) VALUES (?, ?)', (name, type))
@@ -80,6 +78,21 @@ class DbAct:
         
     def update_topic_id(self, user_id, topic_id):
         self.__db.db_write('UPDATE users SET topic_id = ? WHERE user_id = ?', (topic_id, user_id))
+    
+    def get_name_user(self, user_id: int):
+        return self.__db.db_read('SELECT first_name, last_name FROM users WHERE user_id = ?', (user_id, ))
+    
+    def add_user_id(self, user_id):
+        self.__db.db_write('INSERT INTO applications (user_id) VALUES (?)', (user_id, ))
+
+    def add_quantity_user(self, user_id, quantity):
+        self.__db.db_write('UPDATE applications SET quantity = ? WHERE user_id = ?', (quantity, user_id))
+        
+    def add_destination_address(self, user_id, address):
+        self.__db.db_write('UPDATE applications SET destination_address = ? WHERE user_id = ?', (address, user_id))
+        
+    def get_datas_for_admins(self, user_id: int):
+        return self.__db.db_read('SELECT row_id, quantity, destination_address FROM applications WHERE user_id = ?', (user_id,))
 
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}
