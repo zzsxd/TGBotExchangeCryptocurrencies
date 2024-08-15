@@ -19,6 +19,7 @@ class DB:
             CREATE TABLE users(
                 row_id INTEGER primary key autoincrement not null,
                 user_id INTEGER,
+                operation_type TEXT,
                 first_name TEXT,
                 last_name TEXT,
                 nick_name TEXT,
@@ -41,8 +42,14 @@ class DB:
                 CREATE TABLE applications(
                 row_id INTEGER primary key autoincrement not null,
                 user_id INTEGER,
-                quantity FLOAT,
-                destination_address TEXT
+                source_currency TEXT,
+                source_quantity FLOAT,
+                target_currency TEXT,
+                target_quantity FLOAT,
+                destination_address TEXT,
+                status BOOL,
+                time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                time_closed DATETIME
                 )
                 ''')
             self.__db.commit()

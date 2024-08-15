@@ -26,7 +26,8 @@ class DbAct:
                                                                         "user_application_id": None,
                                                                         "destination_address": None,
                                                                         "admin_currency_name": None,
-                                                                        "admin_currency_cost": None}), is_admin))
+                                                                        "admin_currency_cost": None,
+                                                                        "address_transaction": None}), is_admin))
 
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
@@ -86,12 +87,23 @@ class DbAct:
         
     def update_topic_id(self, user_id, topic_id):
         self.__db.db_write('UPDATE users SET topic_id = ? WHERE user_id = ?', (topic_id, user_id))
+
+    def get_user_id_from_topic(self, topic_id):
+        data = self.__db.db_read("SELECT user_id FROM users WHERE topic_id = ?", (topic_id, ))
+        if len(data) > 0:
+            return data[0][0]
+
+    # def get_user_id_from_application(self, row_id: int):
+    #     return self.__db.db_read("SELECT user_id FROM applications WHERE row_id = ?", (row_id,))[0]
+    # 
+    # def get_topic_id_from_user_id(self, user_id: int):
+    #     return self.__db.db_read("SELECT topic_id FROM users WHERE user_id = ?", (user_id,))[0]
     
     def get_name_user(self, user_id: int):
         return self.__db.db_read('SELECT nick_name, first_name, last_name FROM users WHERE user_id = ?', (user_id, ))[0]
     
     def add_application(self, user_id: int, quantity: float, destination_address: str) -> int:
-        application_id = self.__db.db_write("INSERT INTO applications (user_id, quantity, "
+        application_id = self.__db.db_write("INSERT INTO applications (user_id, target_quantity, "
                                             "destination_address) VALUES (?, ?, ?)",
                                             (user_id, quantity, destination_address))
         if application_id is None:
@@ -99,7 +111,7 @@ class DbAct:
         return application_id
 
     def get_application(self, row_id: int) -> tuple:
-        return self.__db.db_read('SELECT quantity, destination_address FROM applications WHERE row_id = ?', (row_id, ))[0]
+        return self.__db.db_read('SELECT target_quantity, destination_address FROM applications WHERE row_id = ?', (row_id, ))[0]
 
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}

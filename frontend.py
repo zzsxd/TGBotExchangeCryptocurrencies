@@ -37,18 +37,6 @@ class Bot_inline_btns:
             self.__markup.add(btn)
         return self.__markup
 
-    def sell_crypto_btns(self, sell_btns):
-        for i in sell_btns:
-            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_sell{i[0]}')
-            self.__markup.add(btn)
-        return self.__markup
-
-    def exchange_crypto_btns(self, exchange_btns):
-        for i in exchange_btns:
-            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_exchange{i[0]}')
-            self.__markup.add(btn)
-        return self.__markup
-
     def buy_request_btns(self):
         one = types.InlineKeyboardButton('Количество', callback_data='buy_quantity')
         two = types.InlineKeyboardButton('Адрес кошелька', callback_data='buy_address')
@@ -58,7 +46,59 @@ class Bot_inline_btns:
         return self.__markup
 
     def buy_btns(self):
-        one = types.InlineKeyboardButton('Я оплатил', callback_data='ibuy')
+        one = types.InlineKeyboardButton('Я оплатил', callback_data='buy')
         two = types.InlineKeyboardButton('Назад', callback_data='back')
+        self.__markup.add(one, two)
+        return self.__markup
+
+    def sell_crypto_btns(self, sell_btns):
+        for i in sell_btns:
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_sell{i[0]}')
+            self.__markup.add(btn)
+        return self.__markup
+
+    def sell_request_btns(self):
+        one = types.InlineKeyboardButton('Количество', callback_data='sell_quantity')
+        two = types.InlineKeyboardButton('Номер карты', callback_data='sell_address')
+        three = types.InlineKeyboardButton('Продолжить', callback_data='sell_continue')
+        four = types.InlineKeyboardButton('Назад', callback_data='<back>')
+        self.__markup.add(one, two, three, four)
+        return self.__markup
+
+
+    def sell_btns(self):
+        one = types.InlineKeyboardButton('Я оплатил', callback_data='sell')
+        two = types.InlineKeyboardButton('Назад', callback_data='back')
+        self.__markup.add(one, two)
+        return self.__markup
+
+    def exchange_crypto_btns(self, exchange_btns):
+        for i in exchange_btns:
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'first_exchange{i[0]}')
+            self.__markup.add(btn)
+        return self.__markup
+
+    def exchange_btns(self, exchange_btns):
+        for i in exchange_btns:
+            btn = types.InlineKeyboardButton(i[1], callback_data=f'request_exchange{i[0]}')
+            self.__markup.add(btn)
+        return self.__markup
+
+    def exchange_request_btns(self):
+        one = types.InlineKeyboardButton('Количество', callback_data='exchange_quantity')
+        two = types.InlineKeyboardButton('Адрес кошелька', callback_data='exchange_address')
+        three = types.InlineKeyboardButton('Продолжить', callback_data='exchange_continue')
+        four = types.InlineKeyboardButton('Назад', callback_data='<back>')
+        self.__markup.add(one, two, three, four)
+        return self.__markup
+
+    def exchange(self):
+        one = types.InlineKeyboardButton('Я оплатил', callback_data='exchange')
+        two = types.InlineKeyboardButton('Назад', callback_data='back')
+        self.__markup.add(one, two)
+        return self.__markup
+    def topic_btns(self, application_id):
+        one = types.InlineKeyboardButton('Выполнить заявку', callback_data=f'application_confirm{application_id}')
+        two = types.InlineKeyboardButton('Отклонить заявку', callback_data=f'application_reject{application_id}')
         self.__markup.add(one, two)
         return self.__markup
