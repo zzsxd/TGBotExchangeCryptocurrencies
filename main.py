@@ -80,6 +80,42 @@ def current_crypto_price(currency_symbol):
         return False
 
 
+def back_method(user_id, command):
+    if command == '<back>':
+        try:
+            message_ids = db_actions.get_user_system_key(user_id, "backward_message")
+            db_actions.set_user_system_key(user_id, "backward_message", message_ids[:-1])
+            message_id = message_ids[-1]
+            bot.delete_message(user_id, message_id)
+            return False
+        except Exception as e:
+            return True
+    return True
+
+
+def send_message(user_id, args, buttons=None, parse_mode=None):
+    message_id = None
+
+    if buttons is None and parse_mode is None:
+        message_id = bot.send_message(*args).message_id
+    elif buttons is not None and parse_mode is None:
+        message_id = bot.send_message(*args, reply_markup=buttons).message_id
+    elif buttons is None and parse_mode is not None:
+        message_id = bot.send_message(*args, parse_mode=parse_mode).message_id
+    elif buttons is not None and parse_mode is not None:
+        message_id = bot.send_message(*args, parse_mode=parse_mode, reply_markup=buttons).message_id
+
+    message_ids = db_actions.get_user_system_key(user_id, "backward_message")
+    message_ids.append(message_id)
+    db_actions.set_user_system_key(user_id, "backward_message", message_ids)
+
+
+def calculate_exchange_price(give_currency, give_quantity, get_currency):
+    give_currency_price = db_actions.get_exchange_rate_by_name(give_currency)
+    get_currency_price = db_actions.get_exchange_rate_by_name(get_currency)
+    return round(((float(give_quantity) * float(give_currency_price)) / float(get_currency_price)), 2)
+
+
 def main():
     @bot.message_handler(commands=['start', 'admin', 'buy', 'sell', 'exchange'])
     def start(message):
@@ -98,19 +134,17 @@ def main():
                              parse_mode='HTML')
         elif command == 'buy':
             buy_buttons = db_actions.get_exchange_rates("buy")
-            bot.send_message(user_id, 'Здесь вы можете купить криптовалюту по выгодному курсу без регистрации!\n\n'
-                                      'Выберите направление покупки:',
-                             reply_markup=buttons.buy_crypto_btns(buy_buttons))
+            send_message(user_id, [])
+            send_message(user_id, [user_id, 'Здесь вы можете купить криптовалюту по выгодному курсу без регистрации!\n\n'
+                                      'Выберите направление покупки:'], buttons=buttons.buy_crypto_btns(buy_buttons))
         elif command == 'sell':
             sell_buttons = db_actions.get_exchange_rates("sell")
-            bot.send_message(user_id, 'Здесь вы можете продать криптовалюту по выгодному курсу без регистрации!\n\n'
-                                      'Выберите направление продажи:',
-                             reply_markup=buttons.sell_crypto_btns(sell_buttons))
+            send_message(user_id, [user_id,'Здесь вы можете продать криптовалюту по выгодному курсу без регистрации!\n\n'
+                                      'Выберите направление продажи:'], buttons=buttons.sell_crypto_btns(sell_buttons))
         elif command == 'exchange':
             exchange_buttons = db_actions.get_exchange_rates("exchange")
-            bot.send_message(user_id, 'Здесь вы можете обменять криптовалюту по выгодному курсу без регистрации!\n\n'
-                                      'Выберите что менять:',
-                             reply_markup=buttons.exchange_crypto_btns(exchange_buttons))
+            send_message(user_id, [user_id, 'Здесь вы можете обменять криптовалюту по выгодному курсу без регистрации!\n\n'
+                                      'Выберите что менять:'], buttons=buttons.exchange_crypto_btns(exchange_buttons))
         elif db_actions.user_is_admin(user_id):
             if command == 'admin':
                 bot.send_message(user_id, 'Вы успешно зашли в админ-панель!',
@@ -122,6 +156,9 @@ def main():
         buttons = Bot_inline_btns()
         if db_actions.user_is_existed(user_id):
             if db_actions.user_is_admin(user_id):
+
+                ############################################### ADMIN #################################################
+
                 if call.data == 'add_exchange_rate':
                     db_actions.set_user_system_key(user_id, "admin_action", "add")
                     bot.send_message(user_id, 'Выберите направление для которого хотите добавить новый курс',
@@ -148,220 +185,250 @@ def main():
                     db_actions.db_export_xlsx()
                     bot.send_document(user_id, open(config.get_config()['xlsx_path'], 'rb'))
                     os.remove(config.get_config()['xlsx_path'])
-            # elif db_actions.user_is_admin():
-            #     pass
-            #     elif call.data[:19] == 'application_confirm':
-            #         application_id = call.data[19:]
-            #         bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=call.message.reply_to_message.message_thread_id, text='Введите адрес транзакции')
-            #         db_actions.set_user_system_key(user_id, "index", 5)
-            #         print(application_user_id)
-            #         print('beeeebra')
+
+            ################################################## BUY ####################################################
+
             if call.data[:9] == 'first_buy':
-                db_actions.set_user_system_key(user_id, "user_currency_order", call.data[9:])
-                exchange_currency = db_actions.get_exchange_rate(call.data[9:])
-                bot.send_message(user_id, f'Заполните заявку для покупки {exchange_currency[0]}\n\n'
-                                          f'Цена за 1 {exchange_currency[0]} - {round(exchange_currency[1], 2)}₽',
-                                 reply_markup=buttons.buy_request_btns())
+                if back_method(user_id, call.data[9:]):
+                    db_actions.set_user_system_key(user_id, "user_currency_order", call.data[9:])
+                    exchange_currency = db_actions.get_exchange_rate(call.data[9:])
+                    send_message(user_id, [user_id, f'Заполните заявку для покупки {exchange_currency[0]}\n\n'
+                                              f'Цена за 1 {exchange_currency[0]} - {round(exchange_currency[1], 2)}₽'],
+                                     buttons=buttons.buy_request_btns())
             elif call.data == 'buy_quantity':
                 db_actions.set_user_system_key(user_id, "index", 3)
                 bot.send_message(user_id, 'Введите количество криптовалюты на покупку')
             elif call.data == 'buy_address':
                 db_actions.set_user_system_key(user_id, "index", 4)
                 bot.send_message(user_id, 'Введите адрес кошелька')
-            elif call.data == 'buy_continue':
-                if db_actions.get_user_system_key(user_id, "quantity_user") is None:
-                    bot.send_message(user_id, 'Вы не указали количество приобретаемой криптовалюты!')
+            elif call.data[:12] == 'buy_continue':
+                if back_method(user_id, call.data[12:]):
+                    # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
+                    quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
+                    dest_address = db_actions.get_user_system_key(user_id, "destination_address")
+                    # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
+                    crypto_data = db_actions.get_exchange_rate(
+                        db_actions.get_user_system_key(user_id, "user_currency_order"))
+                    quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
+                    first_crypto = crypto_data[0]
 
-                elif db_actions.get_user_system_key(user_id, "destination_address") is None:
-                    bot.send_message(user_id, 'Вы не указали адрес кошелька для получения!')
-                else:
-                    # Создание заявки для транзакции
-                    application_id = db_actions.add_application(user_id=user_id,
-                                                                quantity=db_actions.get_user_system_key(user_id,
-                                                                                                        "quantity_user"),
-                                                                destination_address=db_actions.get_user_system_key(
-                                                                    user_id, "destination_address"))
-                    if application_id:
-                        # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
-                        exchange_currency = db_actions.get_exchange_rate(
-                            db_actions.get_user_system_key(user_id, "user_currency_order"))
-                        rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
+                    if quantity_first is None:
+                        bot.send_message(user_id, 'Вы не указали количество продаваемой криптовалюты!')
 
-                        db_actions.set_user_system_key(user_id, "user_application_id", application_id)
-
-                        bot.send_message(user_id, 'Проверьте, что все данные указаны верно!\n\n'
-                                                  f'Номер заявки: {application_id}\n\n'
-                                                  f'Вы покупаете {db_actions.get_user_system_key(user_id, "quantity_user")} ВТС за {round(rub_cost, 2)}₽\n'
-                                                  f'Средства будут переведены на адрес: '
-                                                  f'{exchange_currency[0]}: {db_actions.get_user_system_key(user_id, "destination_address")}\n\n'
-                                                  f'Для совершения операции отправьте {round(rub_cost, 2)}₽ '
-                                                  f'на номер <code>4536 6363 6262 6636</code>, карта МИР Евгений Алексеевич К.\n\n'
-                                                  f'После оплаты нажмите кнопку: "Я оплатил"\n'
-                                                  f'Средства поступят в течении 20 минут', parse_mode='HTML',
-                                         reply_markup=buttons.buy_btns())
+                    elif dest_address is None:
+                        bot.send_message(user_id, 'Вы не указали номер карты для получения!')
                     else:
-                        bot.send_message(user_id, "Ошибка")
-            elif call.data == 'buy':
-                exchange_currency = db_actions.get_exchange_rate(
-                    db_actions.get_user_system_key(user_id, "user_currency_order"))
-                rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
-                application_id = db_actions.get_user_system_key(user_id, "user_application_id")
-                user_data = db_actions.get_name_user(user_id)
-                application = db_actions.get_application(application_id)
-                time_now = get_current_time()
-                topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
-                                                              name=f'{user_data[1]} '
-                                                                   f'{user_data[2]} ПОКУПКА {exchange_currency[0]}',
-                                                              icon_color=0x6FB9F0).message_thread_id
-                db_actions.update_topic_id(user_id, topic_id)
-                bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
-                                 text=f'Номер заявки: {application_id}\n'
-                                      f'Время заявки: {time_now} МСК\n\n'
-                                      f'Пользователь: {user_data[0]}\n'
-                                      f'Направление обмена: Карта -> {exchange_currency[0]}\n'
-                                      f'Сумма покупки: {round(rub_cost, 2)}₽\n'
-                                      f'Количество {exchange_currency[0]} на покупку: {application[0]} {exchange_currency[0]}\n'
-                                      f'Адрес кошелька: <code>{application[1]}</code>',
-                                 parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
-                bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
+                        # Создание заявки для транзакции
+                        application_id = db_actions.add_application(user_id=user_id,
+                                                                    source_currency="RUB",
+                                                                    source_quantity=quantity_second,
+                                                                    target_currency=first_crypto,
+                                                                    target_quantity=quantity_first,
+                                                                    destination_address=dest_address)
+                        if application_id:
+
+                            db_actions.set_user_system_key(user_id, "user_application_id", application_id)
+
+                            send_message(user_id, [user_id, 'Проверьте, что все данные указаны верно!\n\n'
+                                                      f'Номер заявки: {application_id}\n\n'
+                                                      f'Вы покупаете {quantity_first} {first_crypto} за {quantity_second} ₽\n'
+                                                      f'Средства будут переведены на адрес: '
+                                                      f'{first_crypto}: {dest_address}\n\n'
+                                                      f'Для совершения операции отправьте {quantity_second} ₽ '
+                                                      f'на номер <code>4536 6363 6262 6636</code>, карта МИР Евгений Алексеевич К.\n\n'
+                                                      f'После оплаты нажмите кнопку: "Я оплатил"\n'
+                                                      f'Средства поступят в течении 20 минут'], parse_mode="HTML", buttons=buttons.buy_btns())
+                        else:
+                            bot.send_message(user_id, "Ошибка")
+            elif call.data[:3] == 'buy':
+                if back_method(user_id, call.data[3:]):
+                    exchange_currency = db_actions.get_exchange_rate(
+                        db_actions.get_user_system_key(user_id, "user_currency_order"))
+                    rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
+                    application_id = db_actions.get_user_system_key(user_id, "user_application_id")
+                    user_data = db_actions.get_name_user(user_id)
+                    application = db_actions.get_application(application_id)
+                    time_now = get_current_time()
+                    topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
+                                                                  name=f'{user_data[1]} '
+                                                                       f'{user_data[2]} ПОКУПКА {exchange_currency[0]}',
+                                                                  icon_color=0x6FB9F0).message_thread_id
+                    db_actions.update_topic_id(user_id, topic_id)
+                    bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
+                                     text=f'Номер заявки: {application_id}\n'
+                                          f'Время заявки: {time_now} МСК\n\n'
+                                          f'Пользователь: {user_data[0]}\n'
+                                          f'Направление обмена: Карта -> {exchange_currency[0]}\n'
+                                          f'Сумма покупки: {round(rub_cost, 2)}₽\n'
+                                          f'Количество {exchange_currency[0]} на покупку: {application[0]} {exchange_currency[0]}\n'
+                                          f'Адрес кошелька: <code>{application[1]}</code>',
+                                     parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
+                    bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
+
+            ################################################## SELL ####################################################
+
             elif call.data[:10] == 'first_sell':
-                db_actions.set_user_system_key(user_id, "user_currency_order", call.data[10:])
-                exchange_currency = db_actions.get_exchange_rate(call.data[10:])
-                bot.send_message(user_id, f'Заполните заявку для продажи {exchange_currency[0]}\n\n'
-                                          f'Цена за 1 {exchange_currency[0]} - {round(exchange_currency[1], 2)}₽',
-                                 reply_markup=buttons.sell_request_btns())
+                if back_method(user_id, call.data[10:]):
+                    db_actions.set_user_system_key(user_id, "user_currency_order", call.data[10:])
+                    exchange_currency = db_actions.get_exchange_rate(call.data[10:])
+                    send_message(user_id, [user_id, f'Заполните заявку для продажи {exchange_currency[0]}\n\n'
+                                              f'Цена за 1 {exchange_currency[0]} - {round(exchange_currency[1], 2)}₽'], buttons=buttons.sell_request_btns())
             elif call.data == 'sell_quantity':
                 db_actions.set_user_system_key(user_id, "index", 6)
                 bot.send_message(user_id, 'Введите количество криптовалюты на продажу')
             elif call.data == 'sell_address':
                 db_actions.set_user_system_key(user_id, "index", 7)
                 bot.send_message(user_id, 'Введите номер карты (МИР)')
-            elif call.data == 'sell_continue':
-                if db_actions.get_user_system_key(user_id, "quantity_user") is None:
-                    bot.send_message(user_id, 'Вы не указали количество продаваемой криптовалюты!')
+            elif call.data[:13] == 'sell_continue':
+                if back_method(user_id, call.data[13:]):
+                    # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
+                    quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
+                    dest_address = db_actions.get_user_system_key(user_id, "destination_address")
+                    # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
+                    crypto_data = db_actions.get_exchange_rate(
+                        db_actions.get_user_system_key(user_id, "user_currency_order"))
+                    quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
+                    first_crypto = crypto_data[0]
 
-                elif db_actions.get_user_system_key(user_id, "destination_address") is None:
-                    bot.send_message(user_id, 'Вы не указали номер карты для получения!')
-                else:
-                    # Создание заявки для транзакции
-                    application_id = db_actions.add_application(user_id=user_id,
-                                                                quantity=db_actions.get_user_system_key(user_id,
-                                                                                                        "quantity_user"),
-                                                                destination_address=db_actions.get_user_system_key(
-                                                                    user_id, "destination_address"))
-                    if application_id:
-                        # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
-                        exchange_currency = db_actions.get_exchange_rate(
-                            db_actions.get_user_system_key(user_id, "user_currency_order"))
-                        rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
+                    if quantity_first is None:
+                        bot.send_message(user_id, 'Вы не указали количество продаваемой криптовалюты!')
 
-                        db_actions.set_user_system_key(user_id, "user_application_id", application_id)
-
-                        bot.send_message(user_id, 'Проверьте, что все данные указаны верно!\n\n'
-                                                  f'Номер заявки: {application_id}\n\n'
-                                                  f'Вы продаете {db_actions.get_user_system_key(user_id, "quantity_user")} {exchange_currency[0]} за {round(rub_cost, 2)}₽\n'
-                                                  f'Средства будут переведены на карту: '
-                                                  f'{db_actions.get_user_system_key(user_id, "destination_address")}\n\n'
-                                                  f'Для совершения операции отправьте {db_actions.get_user_system_key(user_id, "quantity_user")} {exchange_currency[0]} '
-                                                  f'на адрес <code>4832kkfdkfskdfk234234</code>\n\n'
-                                                  f'После оплаты нажмите кнопку: "Я оплатил"\n'
-                                                  f'Средства поступят после первого подтвеждения сети', parse_mode='HTML',
-                                         reply_markup=buttons.sell_btns())
+                    elif dest_address is None:
+                        bot.send_message(user_id, 'Вы не указали номер карты для получения!')
                     else:
-                        bot.send_message(user_id, "Ошибка")
-            elif call.data == 'sell':
-                exchange_currency = db_actions.get_exchange_rate(
-                    db_actions.get_user_system_key(user_id, "user_currency_order"))
-                rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
-                application_id = db_actions.get_user_system_key(user_id, "user_application_id")
-                user_data = db_actions.get_name_user(user_id)
-                application = db_actions.get_application(application_id)
-                time_now = get_current_time()
-                topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
-                                                              name=f'{user_data[1]} '
-                                                                   f'{user_data[2]} ПРОДАЖА {exchange_currency[0]}',
-                                                              icon_color=0x6FB9F0).message_thread_id
-                db_actions.update_topic_id(user_id, topic_id)
-                bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
-                                 text=f'Номер заявки: {application_id}\n'
-                                      f'Время заявки: {time_now} МСК\n\n'
-                                      f'Пользователь: {user_data[0]}\n'
-                                      f'Направление обмена: {exchange_currency[0]} -> МИР\n'
-                                      f'Сумма продажи: {round(rub_cost, 2)}₽\n'
-                                      f'Количество {exchange_currency[0]} на продажу: {application[0]} {exchange_currency[0]}\n'
-                                      f'Номер карты: <code>{application[1]}</code>',
-                                 parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
-                bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
+                        # Создание заявки для транзакции
+                        application_id = db_actions.add_application(user_id=user_id,
+                                                                    source_currency=first_crypto,
+                                                                    source_quantity=quantity_first,
+                                                                    target_currency="RUB",
+                                                                    target_quantity=quantity_second,
+                                                                    destination_address=dest_address)
+                        if application_id:
+
+                            db_actions.set_user_system_key(user_id, "user_application_id", application_id)
+                            send_message(user_id, [user_id, 'Проверьте, что все данные указаны верно!\n\n'
+                                                      f'Номер заявки: {application_id}\n\n'
+                                                      f'Вы продаете {quantity_first} {first_crypto} за {quantity_second} ₽\n'
+                                                      f'Средства будут переведены на карту: '
+                                                      f'{dest_address}\n\n'
+                                                      f'Для совершения операции отправьте {quantity_first} {first_crypto} '
+                                                      f'на адрес <code>4832kkfdkfskdfk234234</code>\n\n'
+                                                      f'После оплаты нажмите кнопку: "Я оплатил"\n'
+                                                      f'Средства поступят после первого подтвеждения сети'], buttons=buttons.sell_btns(), parse_mode='HTML')
+                        else:
+                            bot.send_message(user_id, "Ошибка")
+            elif call.data[:4] == 'sell':
+                if back_method(user_id, call.data[4:]):
+                    exchange_currency = db_actions.get_exchange_rate(
+                        db_actions.get_user_system_key(user_id, "user_currency_order"))
+                    rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
+                    application_id = db_actions.get_user_system_key(user_id, "user_application_id")
+                    user_data = db_actions.get_name_user(user_id)
+                    application = db_actions.get_application(application_id)
+                    time_now = get_current_time()
+                    topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
+                                                                  name=f'{user_data[1]} '
+                                                                       f'{user_data[2]} ПРОДАЖА {exchange_currency[0]}',
+                                                                  icon_color=0x6FB9F0).message_thread_id
+                    db_actions.update_topic_id(user_id, topic_id)
+                    bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
+                                     text=f'Номер заявки: {application_id}\n'
+                                          f'Время заявки: {time_now} МСК\n\n'
+                                          f'Пользователь: {user_data[0]}\n'
+                                          f'Направление обмена: {exchange_currency[0]} -> МИР\n'
+                                          f'Сумма продажи: {round(rub_cost, 2)}₽\n'
+                                          f'Количество {exchange_currency[0]} на продажу: {application[0]} {exchange_currency[0]}\n'
+                                          f'Номер карты: <code>{application[1]}</code>',
+                                     parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
+                    bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
+
+            ############################################### EXCHANGE ##################################################
+
             elif call.data[:14] == 'first_exchange':
-                exchange_buttons = db_actions.get_exchange_rates("exchange")
-                bot.send_message(user_id, f'Выберите на что менять',
-                                 reply_markup=buttons.exchange_btns(exchange_buttons))
+                if back_method(user_id, call.data[14:]):
+                    db_actions.set_user_system_key(user_id, "user_first_exchange", call.data[14:])
+                    exchange_buttons = db_actions.get_exchange_rates("exchange")
+                    send_message(user_id, [user_id, f'Выберите на что менять'], buttons=buttons.exchange_btns(exchange_buttons, call.data[14:]))
             elif call.data[:16] == 'request_exchange':
-                bot.send_message(user_id, 'Звполните заявку для обмена "первая выбранная крипта" на "вторая выбранная крипта"\n\n'
-                                          '1 "колво крипта" = 1 "колво крипта"',
-                                 reply_markup=buttons.exchange_request_btns())
+                if back_method(user_id, call.data[16:]):
+                    db_actions.set_user_system_key(user_id, "user_second_exchange", call.data[16:])
+
+                    first_currency_id = db_actions.get_user_system_key(user_id, "user_first_exchange")
+                    second_currency_id = db_actions.get_user_system_key(user_id, "user_second_exchange")
+
+                    first_currency_data = db_actions.get_exchange_rate(first_currency_id)
+                    second_currency_data = db_actions.get_exchange_rate(second_currency_id)
+                    send_message(user_id, [user_id, f'Заполните заявку для обмена {first_currency_data[0]} на {second_currency_data[0]}\n\n'], buttons=buttons.exchange_request_btns())
             elif call.data == 'exchange_quantity':
                 db_actions.set_user_system_key(user_id, "index", 8)
                 bot.send_message(user_id, 'Введите количество криптовалюты на обмен')
             elif call.data == 'exchange_address':
                 db_actions.set_user_system_key(user_id, "index", 9)
                 bot.send_message(user_id, 'Введите адрес кошелька')
-            elif call.data == 'exchange_continue':
-                if db_actions.get_user_system_key(user_id, "quantity_user") is None:
-                    bot.send_message(user_id, 'Вы не указали количество продаваемой криптовалюты!')
+            elif call.data[:17] == 'exchange_continue':
+                if back_method(user_id, call.data[17:]):
+                    # 1 - крипта на продажу 2 - крипта для получения
+                    first_crypto = db_actions.get_exchange_rate(db_actions.get_user_system_key(user_id, "user_first_exchange"))[0]
+                    second_crypto = db_actions.get_exchange_rate(db_actions.get_user_system_key(user_id, "user_second_exchange"))[0]
 
-                elif db_actions.get_user_system_key(user_id, "destination_address") is None:
-                    bot.send_message(user_id, 'Вы не указали номер карты для получения!')
-                else:
-                    # Создание заявки для транзакции
-                    application_id = db_actions.add_application(user_id=user_id,
-                                                                quantity=db_actions.get_user_system_key(user_id,
-                                                                                                        "quantity_user"),
-                                                                destination_address=db_actions.get_user_system_key(
-                                                                    user_id, "destination_address"))
-                    if application_id:
-                        # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
-                        exchange_currency = db_actions.get_exchange_rate(
-                            db_actions.get_user_system_key(user_id, "user_currency_order"))
-                        rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
+                    # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
+                    quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
+                    dest_address = db_actions.get_user_system_key(user_id, "destination_address")
+                    quantity_second = calculate_exchange_price(first_crypto, quantity_first, second_crypto)
 
-                        db_actions.set_user_system_key(user_id, "user_application_id", application_id)
+                    if quantity_first is None:
+                        bot.send_message(user_id, f'Вы не указали количество {first_crypto}!')
 
-                        bot.send_message(user_id, 'Проверьте, что все данные указаны верно!\n\n'
-                                                  f'Номер заявки: {application_id}\n\n'
-                                                  f'Вы продаете {db_actions.get_user_system_key(user_id, "quantity_user")} {exchange_currency[0]} за {round(rub_cost, 2)}₽\n'
-                                                  f'Средства будут переведены на карту: '
-                                                  f'{db_actions.get_user_system_key(user_id, "destination_address")}\n\n'
-                                                  f'Для совершения операции отправьте {db_actions.get_user_system_key(user_id, "quantity_user")} {exchange_currency[0]} '
-                                                  f'на адрес <code>4832kkfdkfskdfk234234</code>\n\n'
-                                                  f'После оплаты нажмите кнопку: "Я оплатил"\n'
-                                                  f'Средства поступят после первого подтвеждения сети', parse_mode='HTML',
-                                         reply_markup=buttons.exchange())
+                    elif dest_address is None:
+                        bot.send_message(user_id, f'Вы не указали адрес {second_crypto} для получения!')
                     else:
-                        bot.send_message(user_id, "Ошибка")
-            elif call.data == 'exchange':
-                exchange_currency = db_actions.get_exchange_rate(
-                    db_actions.get_user_system_key(user_id, "user_currency_order"))
-                rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
-                application_id = db_actions.get_user_system_key(user_id, "user_application_id")
-                user_data = db_actions.get_name_user(user_id)
-                application = db_actions.get_application(application_id)
-                time_now = get_current_time()
-                topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
-                                                              name=f'{user_data[1]} '
-                                                                   f'{user_data[2]} ОБМЕН {exchange_currency[0]}',
-                                                              icon_color=0x6FB9F0).message_thread_id
-                db_actions.update_topic_id(user_id, topic_id)
-                bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
-                                 text=f'Номер заявки: {application_id}\n'
-                                      f'Время заявки: {time_now} МСК\n\n'
-                                      f'Пользователь: {user_data[0]}\n'
-                                      f'Направление обмена: {exchange_currency[0]} -> МИР\n'
-                                      f'Сумма продажи: {round(rub_cost, 2)}₽\n'
-                                      f'Количество {exchange_currency[0]} на продажу: {application[0]} {exchange_currency[0]}\n'
-                                      f'Номер карты: <code>{application[1]}</code>',
-                                 parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
-                bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
+                        # Создание заявки для транзакции
+                        application_id = db_actions.add_application(user_id=user_id,
+                                                                    source_currency=first_crypto,
+                                                                    source_quantity=quantity_first,
+                                                                    target_currency=second_crypto,
+                                                                    target_quantity=quantity_second,
+                                                                    destination_address=dest_address)
+                        if application_id:
+                            db_actions.set_user_system_key(user_id, "user_application_id", application_id)
+                            send_message(user_id, [user_id, 'Проверьте, что все данные указаны верно!\n\n'
+                                                      f'Номер заявки: {application_id}\n\n'
+                                                      f'Вы продаете {quantity_first} {first_crypto} за {quantity_second} {second_crypto}\n'
+                                                      f'Средства будут переведены на карту: '
+                                                      f'{dest_address}\n\n'
+                                                      f'Для совершения операции отправьте {quantity_first} {first_crypto} '
+                                                      f'на адрес <code>4832kkfdkfskdfk234234</code>\n\n'
+                                                      f'После оплаты нажмите кнопку: "Я оплатил"\n'
+                                                      f'Средства поступят после первого подтвеждения сети'], buttons=buttons.exchange(), parse_mode='HTML')
+                        else:
+                            bot.send_message(user_id, "Ошибка")
+            elif call.data[:8] == 'exchange':
+                if back_method(user_id, call.data[8:]):
+                    exchange_currency = db_actions.get_exchange_rate(
+                        db_actions.get_user_system_key(user_id, "user_currency_order"))
+                    rub_cost = db_actions.get_user_system_key(user_id, "quantity_user") * exchange_currency[1]
+                    application_id = db_actions.get_user_system_key(user_id, "user_application_id")
+                    user_data = db_actions.get_name_user(user_id)
+                    application = db_actions.get_application(application_id)
+                    time_now = get_current_time()
+                    topic_id = telebot.TeleBot.create_forum_topic(bot, chat_id=config.get_config()['group_id'],
+                                                                  name=f'{user_data[1]} '
+                                                                       f'{user_data[2]} ОБМЕН {exchange_currency[0]}',
+                                                                  icon_color=0x6FB9F0).message_thread_id
+                    db_actions.update_topic_id(user_id, topic_id)
+                    bot.send_message(chat_id=config.get_config()['group_id'], message_thread_id=topic_id,
+                                     text=f'Номер заявки: {application_id}\n'
+                                          f'Время заявки: {time_now} МСК\n\n'
+                                          f'Пользователь: {user_data[0]}\n'
+                                          f'Направление обмена: {exchange_currency[0]} -> МИР\n'
+                                          f'Сумма продажи: {round(rub_cost, 2)}₽\n'
+                                          f'Количество {exchange_currency[0]} на продажу: {application[0]} {exchange_currency[0]}\n'
+                                          f'Номер карты: <code>{application[1]}</code>',
+                                     parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
+                    bot.send_message(user_id, 'Ваша заявка принята в работу, ожидайте!')
+
+            ################################################## GOVNO NE RABOTAET #######################################
+
             elif call.data[:19] == 'application_confirm':
                 application_id = call.data[19:]
                 bot.send_message(chat_id=config.get_config()['group_id'],

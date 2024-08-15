@@ -27,7 +27,10 @@ class DbAct:
                                                                         "destination_address": None,
                                                                         "admin_currency_name": None,
                                                                         "admin_currency_cost": None,
-                                                                        "address_transaction": None}), is_admin))
+                                                                        "address_transaction": None,
+                                                                        "user_first_exchange": None,
+                                                                        "user_second_exchange": None,
+                                                                        "backward_message": []}), is_admin))
 
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
@@ -80,6 +83,9 @@ class DbAct:
     def get_exchange_rate(self, row_id: int) -> tuple:
         return self.__db.db_read('SELECT name, cost, min_cost FROM exchange_rates WHERE row_id = ?', (row_id,))[0]
 
+    def get_exchange_rate_by_name(self, name: str) -> float:
+        return self.__db.db_read('SELECT cost FROM exchange_rates WHERE name = ?', (name, ))[0][0]
+
     def del_exchange_rates(self, row_id: str):
         self.__db.db_write('DELETE FROM exchange_rates WHERE row_id = ?', (row_id, ))
 
@@ -102,10 +108,13 @@ class DbAct:
     def get_name_user(self, user_id: int):
         return self.__db.db_read('SELECT nick_name, first_name, last_name FROM users WHERE user_id = ?', (user_id, ))[0]
     
-    def add_application(self, user_id: int, quantity: float, destination_address: str) -> int:
-        application_id = self.__db.db_write("INSERT INTO applications (user_id, target_quantity, "
-                                            "destination_address) VALUES (?, ?, ?)",
-                                            (user_id, quantity, destination_address))
+    def add_application(self, user_id: int, source_currency: str, source_quantity: float,
+                        target_currency: str, target_quantity: float, destination_address: str) -> int:
+        application_id = self.__db.db_write("INSERT INTO applications (user_id, source_currency, "
+                                            "source_quantity, target_currency, target_quantity, "
+                                            "destination_address, status) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                                            (user_id, source_currency, source_quantity, target_currency,
+                                             target_quantity, destination_address, False))
         if application_id is None:
             return False
         return application_id
