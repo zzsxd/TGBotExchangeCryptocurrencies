@@ -32,8 +32,25 @@ class DbAct:
                                                                         "user_second_exchange": None,
                                                                         "backward_message": []}), is_admin))
 
+    def add_group(self, group_id: int, chat_type: str):
+        if not self.group_is_existed(group_id) and chat_type in ["supergroup"]:
+            self.__db.db_write(
+                'INSERT INTO groups (group_id, system_data) '
+                'VALUES (?, ?)',
+                (group_id, json.dumps({"index": None, "admin_transaction_address": None,
+                                       "admin_cancel_reason": None})))
+
     def user_is_existed(self, user_id):
         data = self.__db.db_read('SELECT count(*) FROM users WHERE user_id = ?', (user_id,))
+        if len(data) > 0:
+            if data[0][0] > 0:
+                status = True
+            else:
+                status = False
+            return status
+
+    def group_is_existed(self, group_id):
+        data = self.__db.db_read('SELECT count(*) FROM groups WHERE group_id = ?', (group_id,))
         if len(data) > 0:
             if data[0][0] > 0:
                 status = True
@@ -71,6 +88,30 @@ class DbAct:
         if not self.user_is_existed(user_id):
             return None
         return self.__db.db_read('SELECT system_data FROM users WHERE user_id = ?', (user_id,))[0][0]
+
+    ########################################################################################################
+
+    def set_group_system_key(self, user_id: int, key: str, value: any) -> None:
+        system_data = self.get_group_system_data(user_id)
+        if system_data is None:
+            return None
+        system_data = json.loads(system_data)
+        system_data[key] = value
+        self.__db.db_write('UPDATE groups SET system_data = ? WHERE group_id = ?', (json.dumps(system_data), user_id))
+
+    def get_group_system_key(self, user_id: int, key: str):
+        system_data = self.get_group_system_data(user_id)
+        if system_data is None:
+            return None
+        system_data = json.loads(system_data)
+        if key not in system_data.keys():
+            return None
+        return system_data[key]
+
+    def get_group_system_data(self, user_id: int):
+        if not self.group_is_existed(user_id):
+            return None
+        return self.__db.db_read('SELECT system_data FROM groups WHERE group_id = ?', (user_id,))[0][0]
 
     ########################################################################################################
 

@@ -53,6 +53,13 @@ class DB:
                 time_closed DATETIME
                 )
                 ''')
+            self.__cursor.execute('''
+                CREATE TABLE groups(
+                row_id INTEGER primary key autoincrement not null,
+                group_id INTEGER,
+                system_data TEXT
+                )
+                ''')
             self.__db.commit()
         else:
             self.__db = sqlite3.connect(self.__db_path, check_same_thread=False)

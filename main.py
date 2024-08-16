@@ -121,9 +121,12 @@ def main():
     def start(message):
         command = message.text.replace('/', '')
         user_id = message.from_user.id
+        group_id = message.chat.id
+        chat_type = message.chat.type
         buttons = Bot_inline_btns()
         db_actions.add_user(user_id, message.from_user.first_name, message.from_user.last_name,
                             f'@{message.from_user.username}')
+        db_actions.add_group(group_id, chat_type)
         if command == 'start':
             bot.send_message(user_id,
                              '<b>Привет! 👋</b>\n\n'
@@ -435,12 +438,15 @@ def main():
 
 ############################################### ADMIN_APPLICATIONS #########################################################
 
-        elif user_id == config.get_config()['group_id']:
+        elif db_actions.group_is_existed(user_id):
             if call.data[:7] == 'confirm':
                 application_id = call.data[7:]
                 bot.send_message(chat_id=config.get_config()['group_id'],
                                  message_thread_id=call.message.reply_to_message.message_thread_id,
                                  text='Введите адрес транзакции')
+                ## все ключи воркают только исползуй "set_group_system_key" и "get_group_system_key"
+                db_actions.set_group_system_key(user_id, "index", "0")
+                db_actions.set_group_system_key(user_id, "admin_transaction_address", "HUI")
             elif call.data == 'close_application':
                 # bot.send_message(chat_id=,
                 #                  text=f'Номер заявки: {application_id}\n'
@@ -466,6 +472,7 @@ def main():
     def text_message(message):
         user_input = message.text
         user_id = message.chat.id
+        print(message)
         buttons = Bot_inline_btns()
         code = db_actions.get_user_system_key(user_id, "index")
         if db_actions.user_is_existed(user_id):
@@ -582,7 +589,7 @@ def main():
                         bot.send_message(user_id, '❌ Введенный кошелек неправильный! ❌')
                 else:
                     bot.send_message(user_id, '❌ Неправильный ввод! ❌')
-        elif user_id == config.get_config()['group_id']:
+        elif db_actions.group_is_existed(user_id):
             if verify_user_text(user_input):
                 db_actions.add_transaction_address(user_input, )
                 bot.send_message(chat_id=config.get_config()['group_id'],
