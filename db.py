@@ -47,6 +47,7 @@ class DB:
                 target_currency TEXT,
                 target_quantity FLOAT,
                 destination_address TEXT,
+                address_transaction TEXT,
                 status BOOL,
                 time_created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 time_closed DATETIME

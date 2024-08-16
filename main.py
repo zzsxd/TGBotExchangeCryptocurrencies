@@ -143,7 +143,7 @@ def main():
         elif command == 'exchange':
             exchange_buttons = db_actions.get_exchange_rates("exchange")
             send_message(user_id, [user_id, '🤑Здесь Вы можете <u>обменять криптовалюту</u> по выгодному курсу <b><u>без регистрации!</u></b>🤑\n\n'
-                                      'Выберите что менять:'], buttons=buttons.exchange_crypto_btns(exchange_buttons), parse_mode='HTML')
+                                      'Выберите какую криптовалюту менять:'], buttons=buttons.exchange_crypto_btns(exchange_buttons), parse_mode='HTML')
         elif db_actions.user_is_admin(user_id):
             if command == 'admin':
                 bot.send_message(user_id, '✅ Вы успешно зашли в админ-панель! ✅',
@@ -348,7 +348,7 @@ def main():
                 if back_method(user_id, call.data[14:]):
                     db_actions.set_user_system_key(user_id, "user_first_exchange", call.data[14:])
                     exchange_buttons = db_actions.get_exchange_rates("exchange")
-                    send_message(user_id, [user_id, f'Выберите на что менять'], buttons=buttons.exchange_btns(exchange_buttons, call.data[14:]))
+                    send_message(user_id, [user_id, f'Выберите на какую криптовалюту менять'], buttons=buttons.exchange_btns(exchange_buttons, call.data[14:]))
             elif call.data[:16] == 'request_exchange':
                 if back_method(user_id, call.data[16:]):
                     db_actions.set_user_system_key(user_id, "user_second_exchange", call.data[16:])
@@ -432,21 +432,35 @@ def main():
                                           f'Адрес кошелька: <code>{application[1]}</code>',
                                      parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
                     bot.send_message(user_id, '⏳ Ваша заявка принята в работу, ожидайте! ⏳')
+
+############################################### ADMIN_APPLICATIONS #########################################################
+
         elif user_id == config.get_config()['group_id']:
             if call.data[:7] == 'confirm':
+                application_id = call.data[7:]
                 bot.send_message(chat_id=config.get_config()['group_id'],
                                  message_thread_id=call.message.reply_to_message.message_thread_id,
                                  text='Введите адрес транзакции')
-                db_actions.set_user_system_key(user_id, "index", 5)
             elif call.data == 'close_application':
+                # bot.send_message(chat_id=,
+                #                  text=f'Номер заявки: {application_id}\n'
+                #                       f'Статус: Выполнено\n'
+                #                       f'Время совершения операции МСК: {get_current_time()}\n'
+                #                       f'Вы купили хуйню за хуйню\n'
+                #                       f'Адрес транзакции: {address_transaction}\n\n'
+                #                       f'Спасибо за пользование нашим сервисом!')
+                bot.send_message(chat_id=config.get_config()['group_id'],
+                                 message_thread_id=call.message.reply_to_message.message_thread_id,
+                                 text='Заявка успешно закрыта!')
+            elif call.data[:6] == 'reject':
+                application_id = call.data[6:]
                 bot.send_message(chat_id=db_actions.get_user_id_from_topic(call.message.reply_to_message.id),
                                  text=f'Номер заявки: {application_id}\n'
-                                      f'Статус: Выполнено\n'
-                                      f'Время совершения операции МСК: {get_current_time()}\n'
-                                      f'Вы купили хуйню за хуйню\n'
-                                      f'Адрес транзакции: {user_input}\n\n'
-                                      f'Спасибо за пользование нашим сервисом!')
-                bot.send_message(user_id, 'Заявка успешно закрыта!')
+                                      f'Статус: Отклонено\n'
+                                      f'Время отклонения по МСК: {get_current_time()}\n')
+                bot.send_message(chat_id=config.get_config()['group_id'],
+                                 message_thread_id=call.message.reply_to_message.message_thread_id,
+                                 text='Заявка успешно отклонена!')
 
     @bot.message_handler(content_types=['text', 'photo'])
     def text_message(message):
@@ -495,7 +509,7 @@ def main():
                         exchange_currency = db_actions.get_exchange_rate(currency_id)
                         db_actions.set_user_system_key(user_id, "quantity_user", float(user_input))
                         db_actions.set_user_system_key(user_id, "index", None)
-                        bot.send_message(user_id, f'Вы получите {user_input} {exchange_currency[0]}')
+                        bot.send_message(user_id, f'💰 Вы получите {user_input} {exchange_currency[0]} 💰')
                     else:
                         bot.send_message(user_id,
                                          f"❌ Введенная вами сумма ({user_input}) меньше минимальной ({min_cost}) ❌")
@@ -522,7 +536,7 @@ def main():
                         db_actions.set_user_system_key(user_id, "quantity_user", float(user_input))
                         db_actions.set_user_system_key(user_id, "index", None)
                         user_get_cost = float(user_input) * float(exchange_currency[1])
-                        bot.send_message(user_id, f'За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽')
+                        bot.send_message(user_id, f'💰 За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽ 💰')
                     else:
                         bot.send_message(user_id,
                                          f"Введенная вами сумма ({user_input}) меньше минимальной ({min_cost})")
@@ -551,7 +565,7 @@ def main():
                     if float(user_input) >= min_cost:
                         db_actions.set_user_system_key(user_id, "quantity_user", float(user_input))
                         db_actions.set_user_system_key(user_id, "index", None)
-                        bot.send_message(user_id, f'За {user_input} {first_crypto} вы получите {quantity_second} {second_crypto}')
+                        bot.send_message(user_id, f'💰За {user_input} {first_crypto} вы получите {quantity_second} {second_crypto} 💰')
                     else:
                         bot.send_message(user_id,
                                          f"Введенная вами сумма ({user_input}) меньше минимальной ({min_cost})")
@@ -570,6 +584,7 @@ def main():
                     bot.send_message(user_id, '❌ Неправильный ввод! ❌')
         elif user_id == config.get_config()['group_id']:
             if verify_user_text(user_input):
+                db_actions.add_transaction_address(user_input, )
                 bot.send_message(chat_id=config.get_config()['group_id'],
                                  message_thread_id=message.reply_to_message.message_thread_id,
                                  text='✅ Адрес транзакции успешно подтвержден ✅', reply_markup=buttons.close_request_btns())

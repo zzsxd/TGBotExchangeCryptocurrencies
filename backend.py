@@ -122,6 +122,9 @@ class DbAct:
     def get_application(self, row_id: int) -> tuple:
         return self.__db.db_read('SELECT target_quantity, destination_address FROM applications WHERE row_id = ?', (row_id, ))[0]
 
+    def add_transaction_address(self, transaction_id: str, application_id: int):
+        self.__db.db_write('UPDATE applications SET address_transaction = ? WHERE row_id = ?', (transaction_id, application_id,))
+
     def db_export_xlsx(self):
         d = {'Имя': [], 'Фамилия': [], 'Никнейм': []}
         users = self.__db.db_read('SELECT first_name, last_name, nick_name FROM users', ())
