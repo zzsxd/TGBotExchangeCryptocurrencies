@@ -30,6 +30,8 @@ class DbAct:
                                                                         "address_transaction": None,
                                                                         "user_first_exchange": None,
                                                                         "user_second_exchange": None,
+                                                                        "admin_application_id": None,
+                                                                        "reason_reject_admin": None,
                                                                         "backward_message": []}), is_admin))
 
     def add_group(self, group_id: int, chat_type: str):
@@ -140,12 +142,9 @@ class DbAct:
         if len(data) > 0:
             return data[0][0]
 
-    # def get_user_id_from_application(self, row_id: int):
-    #     return self.__db.db_read("SELECT user_id FROM applications WHERE row_id = ?", (row_id,))[0]
-    # 
-    # def get_topic_id_from_user_id(self, user_id: int):
-    #     return self.__db.db_read("SELECT topic_id FROM users WHERE user_id = ?", (user_id,))[0]
-    
+    def get_datas_from_application(self, row_id: int):
+        return self.__db.db_read("SELECT user_id, address_transaction, source_currency, source_quantity, target_currency, target_quantity FROM applications WHERE row_id = ?", (row_id,))[0]
+
     def get_name_user(self, user_id: int):
         return self.__db.db_read('SELECT nick_name, first_name, last_name FROM users WHERE user_id = ?', (user_id, ))[0]
     

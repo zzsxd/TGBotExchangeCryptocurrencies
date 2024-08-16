@@ -197,6 +197,14 @@ def main():
                     send_message(user_id, [user_id, f'Заполните заявку для покупки {exchange_currency[0]}\n\n'
                                               f'Цена за 1 {exchange_currency[0]} - {round(exchange_currency[1], 2)}₽'],
                                      buttons=buttons.buy_request_btns())
+            elif call.data == 'start':
+                bot.send_message(user_id,
+                                 '<b>Привет, хочешь совершить еще обмен? 👋</b>\n\n'
+                                 '<u>выбирай команду снизу!</u> ✅\n\n'
+                                 '/buy - 💰 покупка криптовалюты 💰\n\n'
+                                 '/sell - 💸 продажа криптовалюты 💸\n\n'
+                                 '/exchange - 🤑 обмен криптовалюты 🤑',
+                                 parse_mode='HTML')
             elif call.data == 'buy_quantity':
                 db_actions.set_user_system_key(user_id, "index", 3)
                 bot.send_message(user_id, 'Введите количество криптовалюты на покупку')
@@ -338,11 +346,11 @@ def main():
                                      text=f'Номер заявки: {application_id}\n'
                                           f'Время заявки: {time_now} МСК\n\n'
                                           f'Пользователь: {user_data[0]}\n'
-                                          f'Направление обмена: {exchange_currency[0]} -> МИР\n'
+                                          f'Направление обмена: {exchange_currency[0]} -> КАРТА\n'
                                           f'Сумма продажи: {round(rub_cost, 2)}₽\n'
                                           f'Количество {exchange_currency[0]} на продажу: {quantity_first} {exchange_currency[0]}\n'
                                           f'Номер карты: <code>{application[1]}</code>',
-                                     parse_mode='HTML', reply_markup=buttons.topic_btns(application_id))
+                                     parse_mode='HTML', reply_markup=buttons.sell_topic_btns(application_id))
                     bot.send_message(user_id, '⏳ Ваша заявка принята в работу, ожидайте! ⏳')
 
             ############################################### EXCHANGE ##################################################
@@ -445,25 +453,51 @@ def main():
                                  message_thread_id=call.message.reply_to_message.message_thread_id,
                                  text='Введите адрес транзакции')
                 ## все ключи воркают только исползуй "set_group_system_key" и "get_group_system_key"
-                db_actions.set_group_system_key(user_id, "index", "0")
-                db_actions.set_group_system_key(user_id, "admin_transaction_address", "HUI")
+                db_actions.set_group_system_key(user_id, "index", 0)
+                db_actions.set_group_system_key(user_id, "admin_application_id", application_id)
+            elif call.data[:12] == 'sell_confirm':
+                application_id = call.data[12:]
+                user_datas = db_actions.get_datas_from_application(application_id)
+                bot.send_message(chat_id=user_datas[0],
+                                 text=f'Номер заявки: {application_id}\n'
+                                      f'Статус: Выполнено\n'
+                                      f'Время совершения операции МСК: {get_current_time()}\n'
+                                      f'Вы продали {user_datas[5]} {user_datas[4]} за {user_datas[3]} {user_datas[2]}\n'
+                                      f'Спасибо за пользование нашим сервисом!', reply_markup=buttons.new_application_btns(),
+                                 parse_mode='HTML')
+                bot.send_message(chat_id=config.get_config()['group_id'],
+                                 message_thread_id=call.message.reply_to_message.message_thread_id,
+                                 text='Заявка успешно закрыта!')
             elif call.data == 'close_application':
-                # bot.send_message(chat_id=,
-                #                  text=f'Номер заявки: {application_id}\n'
-                #                       f'Статус: Выполнено\n'
-                #                       f'Время совершения операции МСК: {get_current_time()}\n'
-                #                       f'Вы купили хуйню за хуйню\n'
-                #                       f'Адрес транзакции: {address_transaction}\n\n'
-                #                       f'Спасибо за пользование нашим сервисом!')
+                application_id = db_actions.get_group_system_key(user_id, "admin_application_id")
+                user_datas = db_actions.get_datas_from_application(application_id)
+                bot.send_message(chat_id=user_datas[0],
+                                 text=f'Номер заявки: {application_id}\n'
+                                      f'Статус: Выполнено\n'
+                                      f'Время совершения операции МСК: {get_current_time()}\n'
+                                      f'Вы купили {user_datas[5]} {user_datas[4]} за {user_datas[3]} {user_datas[2]}\n'
+                                      f'Адрес транзакции: <code>{user_datas[1]}</code>\n\n'
+                                      f'Спасибо за пользование нашим сервисом!', reply_markup=buttons.new_application_btns(),
+                                 parse_mode='HTML')
                 bot.send_message(chat_id=config.get_config()['group_id'],
                                  message_thread_id=call.message.reply_to_message.message_thread_id,
                                  text='Заявка успешно закрыта!')
             elif call.data[:6] == 'reject':
                 application_id = call.data[6:]
-                bot.send_message(chat_id=db_actions.get_user_id_from_topic(call.message.reply_to_message.id),
+                db_actions.set_group_system_key(user_id, "admin_application_id", application_id)
+                db_actions.set_group_system_key(user_id, "index", 1)
+                bot.send_message(chat_id=config.get_config()['group_id'],
+                                 message_thread_id=call.message.reply_to_message.message_thread_id,
+                                 text='Введите причину отмены!')
+            elif call.data == 'close_reject_application':
+                application_id = db_actions.get_group_system_key(user_id, "admin_application_id")
+                reason_reject = db_actions.get_group_system_key(user_id, "reason_reject_admin")
+                user_datas = db_actions.get_datas_from_application(application_id)
+                bot.send_message(chat_id=user_datas[0],
                                  text=f'Номер заявки: {application_id}\n'
                                       f'Статус: Отклонено\n'
-                                      f'Время отклонения по МСК: {get_current_time()}\n')
+                                      f'Время отклонения по МСК: {get_current_time()}\n'
+                                      f'Причина отмены: {reason_reject}', reply_markup=buttons.new_application_btns())
                 bot.send_message(chat_id=config.get_config()['group_id'],
                                  message_thread_id=call.message.reply_to_message.message_thread_id,
                                  text='Заявка успешно отклонена!')
@@ -472,9 +506,9 @@ def main():
     def text_message(message):
         user_input = message.text
         user_id = message.chat.id
-        print(message)
         buttons = Bot_inline_btns()
         code = db_actions.get_user_system_key(user_id, "index")
+        group_code = db_actions.get_group_system_key(user_id, "index")
         if db_actions.user_is_existed(user_id):
             if db_actions.user_is_admin(user_id):
                 if code == 0:
@@ -590,11 +624,24 @@ def main():
                 else:
                     bot.send_message(user_id, '❌ Неправильный ввод! ❌')
         elif db_actions.group_is_existed(user_id):
-            if verify_user_text(user_input):
-                db_actions.add_transaction_address(user_input, )
-                bot.send_message(chat_id=config.get_config()['group_id'],
-                                 message_thread_id=message.reply_to_message.message_thread_id,
-                                 text='✅ Адрес транзакции успешно подтвержден ✅', reply_markup=buttons.close_request_btns())
+            if group_code == 0:
+                if verify_user_text(user_input):
+                    application_id = db_actions.get_group_system_key(user_id, "admin_application_id")
+                    db_actions.add_transaction_address(user_input, application_id)
+                    bot.send_message(chat_id=config.get_config()['group_id'],
+                                     message_thread_id=message.reply_to_message.message_thread_id,
+                                     text='✅ Адрес транзакции успешно подтвержден ✅', reply_markup=buttons.close_request_btns())
+                else:
+                    bot.send_message(chat_id=config.get_config()['group_id'],
+                                     message_thread_id=message.reply_to_message.message_thread_id,
+                                     text='❌ Неправильный ввод! ❌')
+            elif group_code == 1:
+                if verify_user_text(user_input):
+                    db_actions.set_group_system_key(user_id, "reason_reject_admin", user_input)
+                    bot.send_message(chat_id=config.get_config()['group_id'],
+                                     message_thread_id=message.reply_to_message.message_thread_id,
+                                     text='✅ Причина отмены указана! ✅', reply_markup=buttons.close_application_btns())
+
                 
 
     bot.polling(none_stop=True)

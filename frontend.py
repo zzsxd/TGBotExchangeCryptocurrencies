@@ -116,3 +116,19 @@ class Bot_inline_btns:
         one = types.InlineKeyboardButton('Завершить заявку', callback_data='close_application')
         self.__markup.add(one)
         return self.__markup
+
+    def close_application_btns(self):
+        one = types.InlineKeyboardButton('Завершить заявку', callback_data='close_reject_application')
+        self.__markup.add(one)
+        return self.__markup
+
+    def new_application_btns(self):
+        one = types.InlineKeyboardButton('Совершить еще обмен', callback_data='start')
+        self.__markup.add(one)
+        return self.__markup
+
+    def sell_topic_btns(self, application_id):
+        one = types.InlineKeyboardButton('Выполнить заявку', callback_data=f'sell_confirm{application_id}')
+        two = types.InlineKeyboardButton('Отклонить заявку', callback_data=f'reject{application_id}')
+        self.__markup.add(one, two)
+        return self.__markup
