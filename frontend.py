@@ -123,7 +123,7 @@ class Bot_inline_btns:
         return self.__markup
 
     def new_application_btns(self):
-        one = types.InlineKeyboardButton('Совершить еще обмен', callback_data='start')
+        one = types.InlineKeyboardButton('💰Совершить еще обмен 💰', callback_data='start')
         self.__markup.add(one)
         return self.__markup
 

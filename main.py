@@ -207,7 +207,7 @@ def main():
                                  parse_mode='HTML')
             elif call.data == 'buy_quantity':
                 db_actions.set_user_system_key(user_id, "index", 3)
-                bot.send_message(user_id, 'Введите количество криптовалюты на покупку')
+                bot.send_message(user_id, '💸Введите количество криптовалюты на покупку 💸')
             elif call.data == 'buy_address':
                 db_actions.set_user_system_key(user_id, "index", 4)
                 bot.send_message(user_id, 'Введите адрес кошелька')
@@ -462,7 +462,7 @@ def main():
                                  text=f'Номер заявки: {application_id}\n'
                                       f'Статус: Выполнено\n'
                                       f'Время совершения операции МСК: {get_current_time()}\n'
-                                      f'Вы продали {user_datas[5]} {user_datas[4]} за {user_datas[3]} {user_datas[2]}\n'
+                                      f'Вы продали {user_datas[5]} {user_datas[4]} за {round(user_datas[3], 2)} {user_datas[2]}\n'
                                       f'Спасибо за пользование нашим сервисом!', reply_markup=buttons.new_application_btns(),
                                  parse_mode='HTML')
                 bot.send_message(chat_id=config.get_config()['group_id'],
@@ -475,7 +475,7 @@ def main():
                                  text=f'Номер заявки: {application_id}\n'
                                       f'Статус: Выполнено\n'
                                       f'Время совершения операции МСК: {get_current_time()}\n'
-                                      f'Вы купили {user_datas[5]} {user_datas[4]} за {user_datas[3]} {user_datas[2]}\n'
+                                      f'Вы купили {user_datas[5]} {user_datas[4]} за {round(user_datas[3], 2)} {user_datas[2]}\n'
                                       f'Адрес транзакции: <code>{user_datas[1]}</code>\n\n'
                                       f'Спасибо за пользование нашим сервисом!', reply_markup=buttons.new_application_btns(),
                                  parse_mode='HTML')
@@ -580,7 +580,7 @@ def main():
                         bot.send_message(user_id, f'💰 За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽ 💰')
                     else:
                         bot.send_message(user_id,
-                                         f"Введенная вами сумма ({user_input}) меньше минимальной ({min_cost})")
+                                         f"❌ Введенная вами сумма ({user_input}) меньше минимальной ({min_cost}) ❌")
                 else:
                     bot.send_message(user_id, '❌ Неправильный ввод! ❌')
             elif code == 7:
@@ -594,7 +594,7 @@ def main():
                                                   '(Только карты МИР\n'
                                                   'Пример: 2200 1234 5678 9010)')
                 else:
-                    bot.send_message(user_id, 'Неправильный ввод!')
+                    bot.send_message(user_id, '❌ Неправильный ввод! ❌')
             elif code == 8:
                 if verify_user_float(user_input):
                     currency_id = db_actions.get_user_system_key(user_id, "user_currency_order")
@@ -609,7 +609,7 @@ def main():
                         bot.send_message(user_id, f'💰За {user_input} {first_crypto} вы получите {quantity_second} {second_crypto} 💰')
                     else:
                         bot.send_message(user_id,
-                                         f"Введенная вами сумма ({user_input}) меньше минимальной ({min_cost})")
+                                         f"❌ Введенная вами сумма ({user_input}) меньше минимальной ({min_cost}) ❌")
                 else:
                     bot.send_message(user_id, '❌ Неправильный ввод! ❌')
             elif code == 9:
