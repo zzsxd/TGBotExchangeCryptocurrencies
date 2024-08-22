@@ -41,6 +41,11 @@ def validate_crypto_wallet(coin, address):
         return False
 
 
+def clear_local_states(user_id):
+    db_actions.set_user_system_key(user_id, "quantity_user", None)
+    db_actions.set_user_system_key(user_id, "destination_address", None)
+
+
 def validate_mir(card_number):
     def luhn_checksum(card_number):
         def digits_of(n):
@@ -196,6 +201,7 @@ def main():
 
             if call.data[:9] == 'first_buy':
                 if back_method(user_id, call.data[9:]):
+                    clear_local_states(user_id)
                     db_actions.set_user_system_key(user_id, "user_currency_order", call.data[9:])
                     exchange_currency = db_actions.get_exchange_rate(call.data[9:])
                     send_message(user_id, [user_id, f'Заполните заявку для покупки {exchange_currency[0]}\n\n'
@@ -219,11 +225,6 @@ def main():
                     # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
                     quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
                     dest_address = db_actions.get_user_system_key(user_id, "destination_address")
-                    # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
-                    crypto_data = db_actions.get_exchange_rate(
-                        db_actions.get_user_system_key(user_id, "user_currency_order"))
-                    quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
-                    first_crypto = crypto_data[0]
 
                     if quantity_first is None:
                         bot.send_message(user_id, '❌ Вы не указали количество продаваемой криптовалюты! ❌')
@@ -231,6 +232,11 @@ def main():
                     elif dest_address is None:
                         bot.send_message(user_id, '❌ Вы не указали номер карты для получения! ❌')
                     else:
+                        # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
+                        crypto_data = db_actions.get_exchange_rate(
+                            db_actions.get_user_system_key(user_id, "user_currency_order"))
+                        quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
+                        first_crypto = crypto_data[0]
                         # Создание заявки для транзакции
                         application_id = db_actions.add_application(user_id=user_id,
                                                                     source_currency="RUB",
@@ -285,6 +291,7 @@ def main():
 
             elif call.data[:10] == 'first_sell':
                 if back_method(user_id, call.data[10:]):
+                    clear_local_states(user_id)
                     db_actions.set_user_system_key(user_id, "user_currency_order", call.data[10:])
                     exchange_currency = db_actions.get_exchange_rate(call.data[10:])
                     send_message(user_id, [user_id, f'Заполните заявку для продажи {exchange_currency[0]}\n\n'
@@ -301,11 +308,6 @@ def main():
                     # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
                     quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
                     dest_address = db_actions.get_user_system_key(user_id, "destination_address")
-                    # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
-                    crypto_data = db_actions.get_exchange_rate(
-                        db_actions.get_user_system_key(user_id, "user_currency_order"))
-                    quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
-                    first_crypto = crypto_data[0]
 
                     if quantity_first is None:
                         bot.send_message(user_id, '❌ Вы не указали количество продаваемой криптовалюты! ❌')
@@ -313,6 +315,11 @@ def main():
                     elif dest_address is None:
                         bot.send_message(user_id, '❌ Вы не указали номер карты для получения! ❌')
                     else:
+                        # Получение названия выбранной крипты и ее стоимости 0 - currency, 1 - cost
+                        crypto_data = db_actions.get_exchange_rate(
+                            db_actions.get_user_system_key(user_id, "user_currency_order"))
+                        quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
+                        first_crypto = crypto_data[0]
                         # Создание заявки для транзакции
                         application_id = db_actions.add_application(user_id=user_id,
                                                                     source_currency=first_crypto,
@@ -367,6 +374,7 @@ def main():
 
             elif call.data[:14] == 'first_exchange':
                 if back_method(user_id, call.data[14:]):
+                    clear_local_states(user_id)
                     db_actions.set_user_system_key(user_id, "user_first_exchange", call.data[14:])
                     exchange_buttons = db_actions.get_exchange_rates("exchange")
                     send_message(user_id, [user_id, f'Выберите на какую криптовалюту менять'],
@@ -393,14 +401,15 @@ def main():
                 if back_method(user_id, call.data[17:]):
                     # 1 - крипта на продажу 2 - крипта для получения
                     first_crypto = \
-                    db_actions.get_exchange_rate(db_actions.get_user_system_key(user_id, "user_first_exchange"))[0]
+                        db_actions.get_exchange_rate(
+                            db_actions.get_user_system_key(user_id, "user_first_exchange"))[0]
                     second_crypto = \
-                    db_actions.get_exchange_rate(db_actions.get_user_system_key(user_id, "user_second_exchange"))[0]
+                        db_actions.get_exchange_rate(
+                            db_actions.get_user_system_key(user_id, "user_second_exchange"))[0]
 
                     # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
                     quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
                     dest_address = db_actions.get_user_system_key(user_id, "destination_address")
-                    quantity_second = calculate_exchange_price(first_crypto, quantity_first, second_crypto)
 
                     if quantity_first is None:
                         bot.send_message(user_id, f'❌ Вы не указали количество {first_crypto}! ❌')
@@ -408,6 +417,7 @@ def main():
                     elif dest_address is None:
                         bot.send_message(user_id, f'❌ Вы не указали адрес {second_crypto} для получения! ❌')
                     else:
+                        quantity_second = calculate_exchange_price(first_crypto, quantity_first, second_crypto)
                         # Создание заявки для транзакции
                         application_id = db_actions.add_application(user_id=user_id,
                                                                     source_currency=first_crypto,
