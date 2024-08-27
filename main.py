@@ -320,6 +320,7 @@ def main():
                             db_actions.get_user_system_key(user_id, "user_currency_order"))
                         quantity_second = db_actions.get_user_system_key(user_id, "quantity_user") * crypto_data[1]
                         first_crypto = crypto_data[0]
+                        crypto_address = crypto_data[3]
                         # Создание заявки для транзакции
                         application_id = db_actions.add_application(user_id=user_id,
                                                                     source_currency=first_crypto,
@@ -328,7 +329,6 @@ def main():
                                                                     target_quantity=quantity_second,
                                                                     destination_address=dest_address)
                         if application_id:
-
                             db_actions.set_user_system_key(user_id, "user_application_id", application_id)
                             send_message(user_id, [user_id, 'Проверьте, что все данные указаны верно!\n\n'
                                                             f'Номер заявки: {application_id}\n\n'
@@ -337,7 +337,7 @@ def main():
                                                             f'{dest_address}\n\n'
                                                             f'Для совершения операции отправьте {quantity_first} {first_crypto} '
                                                             f'на адрес\n💳💳💳💳💳💳💳💳💳\n'
-                                                            '<code>4832kkfdkfskdfk234234</code>\n'
+                                                            f'<code>{crypto_address}</code>\n'
                                                             '💳💳💳💳💳💳💳💳💳\n'
                                                             f'После оплаты нажмите кнопку: "Я оплатил"\n'
                                                             f'Средства поступят после первого подтвеждения сети'],
@@ -406,6 +406,7 @@ def main():
                     second_crypto = \
                         db_actions.get_exchange_rate(
                             db_actions.get_user_system_key(user_id, "user_second_exchange"))[0]
+                    crypto_address = db_actions.get_exchange_rate(db_actions.get_user_system_key(user_id, "user_second_exchange"))[3]
 
                     # 1 - Количество которую меняем 2 - адрес кошелька назначения 3 - Количество которое получаем
                     quantity_first = db_actions.get_user_system_key(user_id, "quantity_user")
@@ -434,7 +435,7 @@ def main():
                                                             f'{dest_address}\n\n'
                                                             f'Для совершения операции отправьте {quantity_first} {first_crypto} '
                                                             f'на адрес\n💳💳💳💳💳💳💳💳💳\n'
-                                                            '<code>4832kkfdkfskdfk234234</code>\n'
+                                                            f'<code>{crypto_address}</code>\n'
                                                             '💳💳💳💳💳💳💳💳💳\n'
                                                             f'После оплаты нажмите кнопку: "Я оплатил"\n'
                                                             f'Средства поступят после первого подтвеждения сети'],
@@ -566,15 +567,24 @@ def main():
                         bot.send_message(user_id, "❌ Это не число ❌")
                 elif code == 2:
                     if verify_user_float(user_input):
+                        db_actions.set_user_system_key(user_id, "crypto_min_cost", float(user_input))
+                        coin_name = db_actions.get_user_system_key(user_id, "admin_currency_name")
+                        db_actions.set_user_system_key(user_id, "index", 10)
+                        bot.send_message(user_id, f'Введите адрес кошелька для выбранной криптовалюты: {coin_name}')
+                    else:
+                        bot.send_message(user_id, "❌ Это не число ❌")
+                elif code == 10:
+                    if verify_user_text(user_input):
                         direction = db_actions.get_user_system_key(user_id, "admin_exchange_direction")
                         coin_name = db_actions.get_user_system_key(user_id, "admin_currency_name")
                         coin_cost = db_actions.get_user_system_key(user_id, "admin_currency_cost")
+                        min_cost = db_actions.get_user_system_key(user_id, "crypto_min_cost")
                         db_actions.add_exchange_rates(coin_name, current_crypto_price(coin_name) * float(coin_cost),
-                                                      float(user_input), direction)
+                                                      min_cost, str(user_input), direction)
                         db_actions.set_user_system_key(user_id, "index", None)
                         bot.send_message(user_id, "✅ Операция успешно совершена ✅")
                     else:
-                        bot.send_message(user_id, "❌ Это не число ❌")
+                        bot.send_message(user_id, "❌ Это не адрес ❌")
             if code == 3:
                 if verify_user_float(user_input):
                     currency_id = db_actions.get_user_system_key(user_id, "user_currency_order")

@@ -32,6 +32,8 @@ class DbAct:
                                                                         "user_second_exchange": None,
                                                                         "admin_application_id": None,
                                                                         "reason_reject_admin": None,
+                                                                        "admin_add_crypto_address": None,
+                                                                        "crypto_min_cost": None,
                                                                         "backward_message": []}), is_admin))
 
     def add_group(self, group_id: int, chat_type: str):
@@ -117,14 +119,14 @@ class DbAct:
 
     ########################################################################################################
 
-    def add_exchange_rates(self, name: str, cost: float, min_cost: float, type: str):
-        self.__db.db_write('INSERT INTO exchange_rates (name, cost, min_cost, type) VALUES (?, ?, ?, ?)', (name, cost, min_cost, type))
+    def add_exchange_rates(self, name: str, cost: float, min_cost: float, crypto_address: str, type: str):
+        self.__db.db_write('INSERT INTO exchange_rates (name, cost, min_cost, crypto_address, type) VALUES (?, ?, ?, ?, ?)', (name, cost, min_cost, crypto_address, type))
 
     def get_exchange_rates(self, type: str):
-        return self.__db.db_read('SELECT row_id, name, cost, min_cost FROM exchange_rates WHERE type = ?', (type, ))
+        return self.__db.db_read('SELECT row_id, name, cost, min_cost, crypto_address FROM exchange_rates WHERE type = ?', (type, ))
 
     def get_exchange_rate(self, row_id: int) -> tuple:
-        return self.__db.db_read('SELECT name, cost, min_cost FROM exchange_rates WHERE row_id = ?', (row_id,))[0]
+        return self.__db.db_read('SELECT name, cost, min_cost, crypto_address FROM exchange_rates WHERE row_id = ?', (row_id,))[0]
 
     def get_exchange_rate_by_name(self, name: str) -> float:
         return self.__db.db_read('SELECT cost FROM exchange_rates WHERE name = ?', (name, ))[0][0]

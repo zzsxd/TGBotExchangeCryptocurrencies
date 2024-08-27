@@ -35,6 +35,7 @@ class DB:
                 name TEXT,
                 cost FLOAT,
                 min_cost FLOAT,
+                crypto_address TEXT,
                 type TEXT
                 )
                 ''')
