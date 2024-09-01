@@ -269,7 +269,7 @@ def main():
                                                             f'Вы покупаете {quantity_first} {first_crypto} за {round(quantity_second, 2)} ₽\n'
                                                             f'Средства будут переведены на адрес: '
                                                             f'{first_crypto}: {dest_address}\n\n'
-                                                            f'Для совершения операции отправьте {quantity_second} ₽ '
+                                                            f'Для совершения операции отправьте {round(quantity_second, 2)} ₽ '
                                                             f'на номер\n💳💳💳💳💳💳💳💳\n'
                                                             '<code>4536 6363 6262 6636</code>\n'
                                                             '💳💳💳💳💳💳💳💳\nкарта МИР Евгений Алексеевич К.\n\n'
@@ -644,7 +644,7 @@ def main():
                         db_actions.set_user_system_key(user_id, "index", None)
                         user_get_cost = float(user_input) * float(exchange_currency[1])
                         bot.send_message(user_id,
-                                         f'💰 За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽ 💰', reply_markup=buttons.sell_next_bnt())
+                                         f'💰 За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽ 💰')
                         if db_actions.get_user_system_key(user_id, "destination_address") is None:
                             db_actions.set_user_system_key(user_id, "index", 7)
                             bot.send_message(user_id, '💳 Введите номер карты 💳')
