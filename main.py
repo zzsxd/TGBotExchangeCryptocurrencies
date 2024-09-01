@@ -71,21 +71,17 @@ def validate_mir(card_number):
         checksum = sum(odd_digits)
         for d in even_digits:
             checksum += sum(digits_of(d * 2))
-        return checksum % 10 == 0 or checksum % 10 == 1 or checksum % 10 == 2 or checksum % 10 == 3 or checksum % 10 == 4 or checksum % 10 == 5 or checksum % 10 == 6 or checksum % 10 == 7 or checksum % 10 == 8 or checksum % 10 == 9
+        return 0 <= checksum % 10 <= 9
 
     try:
-        # Удаление пробелов из номера карты
         card_number = card_number.replace(' ', '')
 
-        # Проверка длины номера карты
         if len(card_number) != 16:
             return False
 
-        # Проверка префикса номера карты
         if not card_number.startswith('220'):
             return False
 
-        # Проверка по алгоритму Луна
         return luhn_checksum(card_number)
     except:
         return False
