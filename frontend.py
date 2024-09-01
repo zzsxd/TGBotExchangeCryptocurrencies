@@ -47,6 +47,11 @@ class Bot_inline_btns:
         self.__markup.add(one, two, three, four)
         return self.__markup
 
+    def next_buy_btn(self):
+        one = types.InlineKeyboardButton('Продолжить ➡️', callback_data='buy_continue')
+        self.__markup.add(one)
+        return self.__markup
+
     def buy_btns(self):
         one = types.InlineKeyboardButton('☑️ Я оплатил ☑️', callback_data='buy')
         two = types.InlineKeyboardButton('◀️ Назад', callback_data='buy<back>')
@@ -68,6 +73,12 @@ class Bot_inline_btns:
         four = types.InlineKeyboardButton('◀️ Назад', callback_data='sell_continue<back>')
         self.__markup.add(one, two, three, four)
         return self.__markup
+
+    def sell_next_bnt(self):
+        one = types.InlineKeyboardButton('Продолжить ➡️', callback_data='sell_continue')
+        self.__markup.add(one)
+        return self.__markup
+
 
     def sell_btns(self):
         one = types.InlineKeyboardButton('☑️ Я оплатил ☑️', callback_data='sell')

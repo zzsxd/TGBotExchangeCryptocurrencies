@@ -1,5 +1,6 @@
 import telebot
 import os
+import re
 import platform
 import cryptocompare
 import coinaddrvalidator
@@ -32,8 +33,21 @@ def verify_user_float(user_input: str) -> bool:
 
 def validate_crypto_wallet(coin, address):
     try:
-        y = coinaddrvalidator.validate(coin, address)
-        if y.valid:
+        patterns = {
+            'BTC': r'^(bc1|[13])[a-zA-HJ-NP-Z0-9]{25,39}$',
+            'USDT': r'^T[1-9A-HJ-NP-Za-km-z]{33}$',
+            'BCH': r'^([13CH][a-zA-HJ-NP-Z0-9]{25,39}|q[0-9a-z]{41})$',
+            'DASH': r'^X[1-9A-HJ-NP-Za-km-z]{33}$',
+            'DOGE': r'^(D|A|9)[1-9A-HJ-NP-Za-km-z]{33}$',
+            'ETH': r'^0x[a-fA-F0-9]{40}$',
+            'LTC': r'^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$',
+            'BNB': r'^(bnb1)[0-9a-z]{38}$',
+            'SOL': r'^[1-9A-HJ-NP-Za-km-z]{32,44}$',
+            'TONCOIN': r'^EQ[A-Za-z0-9_-]{47}$',
+        }
+
+        pattern = patterns.get(coin.upper())
+        if pattern and re.match(pattern, address):
             return True
         else:
             return False
@@ -479,6 +493,7 @@ def main():
 
         elif db_actions.group_is_existed(user_id):
             if call.data[:7] == 'confirm':
+                print('123')
                 application_id = call.data[7:]
                 bot.send_message(chat_id=config.get_config()['group_id'],
                                  message_thread_id=call.message.reply_to_message.message_thread_id,
@@ -609,7 +624,7 @@ def main():
                     if validate_crypto_wallet(exchange_currency[0], user_input):
                         db_actions.set_user_system_key(user_id, "index", None)
                         db_actions.set_user_system_key(user_id, "destination_address", user_input)
-                        bot.send_message(user_id, '✅ Кошелек подтвержден! ✅')
+                        bot.send_message(user_id, '✅ Кошелек подтвержден! ✅', reply_markup=buttons.next_buy_btn())
                         if db_actions.get_user_system_key(user_id, "quantity_user") is None:
                             db_actions.set_user_system_key(user_id, "index", 3)
                             bot.send_message(user_id, '💸Введите количество криптовалюты на покупку 💸')
@@ -627,7 +642,7 @@ def main():
                         db_actions.set_user_system_key(user_id, "index", None)
                         user_get_cost = float(user_input) * float(exchange_currency[1])
                         bot.send_message(user_id,
-                                         f'💰 За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽ 💰')
+                                         f'💰 За {user_input} {exchange_currency[0]} вы получите {round(user_get_cost, 2)}₽ 💰', reply_markup=buttons.sell_next_bnt())
                         if db_actions.get_user_system_key(user_id, "destination_address") is None:
                             db_actions.set_user_system_key(user_id, "index", 7)
                             bot.send_message(user_id, '💳 Введите номер карты 💳')
@@ -641,7 +656,7 @@ def main():
                     if validate_mir(user_input):
                         db_actions.set_user_system_key(user_id, "index", None)
                         db_actions.set_user_system_key(user_id, "destination_address", user_input)
-                        bot.send_message(user_id, '✅ Карта подтверждена! ✅')
+                        bot.send_message(user_id, '✅ Карта подтверждена! ✅', reply_markup=buttons.sell_next_bnt())
                         if db_actions.get_user_system_key(user_id, "quantity_user") is None:
                             db_actions.set_user_system_key(user_id, "index", 6)
                             bot.send_message(user_id, '💸Введите количество криптовалюты на продажу 💸')
