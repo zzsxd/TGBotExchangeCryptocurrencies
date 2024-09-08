@@ -43,7 +43,7 @@ def validate_crypto_wallet(coin, address):
             'LTC': r'^[LM3][a-km-zA-HJ-NP-Z1-9]{26,33}$',
             'BNB': r'^(bnb1)[0-9a-z]{38}$',
             'SOL': r'^[1-9A-HJ-NP-Za-km-z]{32,44}$',
-            'TONCOIN': r'^EQ[A-Za-z0-9_-]{47}$',
+            'TONCOIN': r'^UQ[A-Za-z0-9_-]{46}$',
         }
 
         pattern = patterns.get(coin.upper())
